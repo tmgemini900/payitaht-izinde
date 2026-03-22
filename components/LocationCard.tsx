@@ -6,6 +6,7 @@ import { X, MapPin, Clock, Users, Building2, Volume2, VolumeX, Share2, Check } f
 import { Location, categoryConfig } from '@/data/locations'
 import { useTheme, tc } from '@/context/ThemeContext'
 import { useLanguage } from '@/context/LanguageContext'
+import type { Translations } from '@/data/translations'
 
 interface LocationCardProps {
   location: Location | null
@@ -248,7 +249,7 @@ export default function LocationCard({ location, onClose }: LocationCardProps) {
                   style={{ borderRadius: '2px' }}
                 >
                   <span>{config.icon}</span>
-                  {config.label}
+                  {t(`cat_${location.category}` as keyof Translations)}
                 </span>
                 <h3
                   className="font-bold leading-snug"
@@ -299,7 +300,7 @@ export default function LocationCard({ location, onClose }: LocationCardProps) {
                 {/* Close */}
                 <button
                   onClick={onClose}
-                  aria-label="Kapat"
+                  aria-label={t('btn_close')}
                   style={{ color: colors.muted }}
                   className="w-8 h-8 flex items-center justify-center transition-colors"
                   onMouseEnter={e => (e.currentTarget.style.color = colors.gold)}

@@ -7,6 +7,7 @@ import { useProfile, BADGE_CONDITIONS } from '@/context/ProfileContext'
 import { locations, categoryConfig } from '@/data/locations'
 import { useTheme, tc } from '@/context/ThemeContext'
 import { useLanguage } from '@/context/LanguageContext'
+import type { Translations } from '@/data/translations'
 
 type Tab = 'stats' | 'routes' | 'badges'
 
@@ -15,15 +16,15 @@ interface ProfilePanelProps {
   onClose: () => void
 }
 
-const ALL_BADGES = [
-  { id: 'istanbul-fatihi', name: 'İstanbul Fatihi',  icon: '⚔️', description: '14 padişah türbesi', color: '#D4AF37' },
-  { id: 'sahabe-yolcusu', name: 'Sahabe Yolcusu',   icon: '☪️', description: '10 sahabe makamı',   color: '#2E8B57' },
-  { id: 'gonul-sultani',  name: 'Gönül Sultanı',     icon: '✨', description: 'Dört manevi direk',   color: '#8B1A1A' },
-  { id: 'ilim-talebesi',  name: 'İlim Talebesi',     icon: '📚', description: '5 alim kabri',        color: '#3498DB' },
-  { id: 'devlet-ricali',  name: 'Devlet Ricali',     icon: '🏛️', description: '8 vezir türbesi',    color: '#9B59B6' },
-  { id: 'kultur-mirasci', name: 'Kültür Mirasçısı',  icon: '🎭', description: '5 kültür insanı',    color: '#E67E22' },
-  { id: 'mimar-sinan',    name: "Sinan'ın İzinde",   icon: '⚒️', description: '3 Sinan eseri',      color: '#4A90D9' },
-  { id: 'istanbul-rehberi', name: 'İstanbul Rehberi',icon: '🗺️', description: '50 konum',           color: '#F0D060' },
+const ALL_BADGES: { id: string; nameKey: keyof Translations; descKey: keyof Translations; icon: string; color: string }[] = [
+  { id: 'istanbul-fatihi',  nameKey: 'badge_istanbul_fatihi',  descKey: 'badge_istanbul_fatihi_desc',  icon: '⚔️', color: '#D4AF37' },
+  { id: 'sahabe-yolcusu',   nameKey: 'badge_sahabe_yolcusu',   descKey: 'badge_sahabe_yolcusu_desc',   icon: '☪️', color: '#2E8B57' },
+  { id: 'gonul-sultani',    nameKey: 'badge_gonul_sultani',    descKey: 'badge_gonul_sultani_desc',    icon: '✨', color: '#8B1A1A' },
+  { id: 'ilim-talebesi',    nameKey: 'badge_ilim_talebesi',    descKey: 'badge_ilim_talebesi_desc',    icon: '📚', color: '#3498DB' },
+  { id: 'devlet-ricali',    nameKey: 'badge_devlet_ricali',    descKey: 'badge_devlet_ricali_desc',    icon: '🏛️', color: '#9B59B6' },
+  { id: 'kultur-mirasci',   nameKey: 'badge_kultur_mirasci',   descKey: 'badge_kultur_mirasci_desc',   icon: '🎭', color: '#E67E22' },
+  { id: 'mimar-sinan',      nameKey: 'badge_mimar_sinan',      descKey: 'badge_mimar_sinan_desc',      icon: '⚒️', color: '#4A90D9' },
+  { id: 'istanbul-rehberi', nameKey: 'badge_istanbul_rehberi', descKey: 'badge_istanbul_rehberi_desc', icon: '🗺️', color: '#F0D060' },
 ]
 
 export default function ProfilePanel({ isOpen, onClose }: ProfilePanelProps) {
@@ -271,7 +272,7 @@ export default function ProfilePanel({ isOpen, onClose }: ProfilePanelProps) {
                           <div key={cat}>
                             <div className="flex items-center justify-between mb-1">
                               <span className="text-xs flex items-center gap-1.5" style={{ color: cfg.color }}>
-                                {cfg.icon} {cfg.label}
+                                {cfg.icon} {t(`cat_${cat}` as keyof Translations)}
                               </span>
                               <span className="text-[10px] opacity-40" style={{ color: colors.text2 }}>
                                 {visited}/{total}
@@ -423,10 +424,10 @@ export default function ProfilePanel({ isOpen, onClose }: ProfilePanelProps) {
                               fontFamily: "'Georgia', serif",
                             }}
                           >
-                            {badge.name}
+                            {t(badge.nameKey)}
                           </div>
                           <div className="text-[10px]" style={{ color: isEarned ? badge.color : colors.muted }}>
-                            {badge.description}
+                            {t(badge.descKey)}
                           </div>
                           {isEarned && (
                             <div className="mt-1.5 flex items-center justify-center gap-1">

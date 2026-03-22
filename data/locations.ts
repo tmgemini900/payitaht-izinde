@@ -26,7 +26,9 @@ export interface Location {
 export interface ThematicRoute {
   id: string
   name: string
+  nameEn: string
   description: string
+  descriptionEn: string
   locationIds: number[]
   color: string
   icon: string
@@ -1557,7 +1559,9 @@ export const thematicRoutes: ThematicRoute[] = [
   {
     id: 'padisahlar-yolu',
     name: 'Padişahlar Yolu',
+    nameEn: 'Sultans Route',
     description: 'Süleymaniye\'den Ayasofya\'ya uzanan bu rota, Osmanlı\'nın büyük padişahlarının izlerini takip eder.',
+    descriptionEn: 'From Süleymaniye to Hagia Sophia, follow the footsteps of the great Ottoman sultans.',
     locationIds: [4, 5, 6, 7, 8, 9, 14],
     color: '#D4AF37',
     icon: '👑',
@@ -1567,7 +1571,9 @@ export const thematicRoutes: ThematicRoute[] = [
   {
     id: 'sahabe-izleri',
     name: 'Sahabe İzleri',
+    nameEn: 'Companions Trail',
     description: 'Eyüpsultan\'dan Ayvansaray surlarına, İstanbul\'u fetheden ilk Müslüman ordusu sahiplerinin izlerini süren rota.',
+    descriptionEn: 'From Eyüpsultan to the Ayvansaray walls, trace the footsteps of the first Muslim army that conquered Istanbul.',
     locationIds: [20, 21, 22, 23, 24, 25, 27],
     color: '#2E8B57',
     icon: '☪️',
@@ -1577,7 +1583,9 @@ export const thematicRoutes: ThematicRoute[] = [
   {
     id: 'dort-manevi-dirек',
     name: "İstanbul'un Dört Manevi Direği",
+    nameEn: "Istanbul's Four Spiritual Pillars",
     description: 'Sümbül Efendi, Merkez Efendi, Yahya Efendi ve Aziz Mahmud Hüdayi – şehrin dört köşesindeki manevi bekçiler.',
+    descriptionEn: 'Sümbül Efendi, Merkez Efendi, Yahya Efendi and Aziz Mahmud Hüdayi – the four spiritual guardians at the corners of the city.',
     locationIds: [43, 42, 41, 40],
     color: '#8B1A1A',
     icon: '✨',
@@ -1587,7 +1595,9 @@ export const thematicRoutes: ThematicRoute[] = [
   {
     id: 'mimar-sinan-eserleri',
     name: "Mimar Sinan'ın İzinde",
+    nameEn: "In Mimar Sinan's Footsteps",
     description: 'Süleymaniye\'den Sokollu Paşa\'ya, Mimar Sinan\'ın dahiyane eserleri etrafında tarihi bir yolculuk.',
+    descriptionEn: "A historical journey around Mimar Sinan's masterpieces, from Süleymaniye to Sokollu Paşa.",
     locationIds: [4, 5, 80, 81, 82],
     color: '#4A90D9',
     icon: '🏛️',
@@ -1597,7 +1607,9 @@ export const thematicRoutes: ThematicRoute[] = [
   {
     id: 'eyup-hatti',
     name: 'Eyüpsultan Hattı',
+    nameEn: 'Eyüpsultan Corridor',
     description: 'Hz. Halid\'in kabrinden Cülus Yolu\'na uzanan bu hat, İstanbul\'un kutsal koridorudur.',
+    descriptionEn: "From the tomb of Hz. Halid to the Cülus Road, Istanbul's sacred spiritual corridor.",
     locationIds: [20, 60, 61, 80, 85, 16, 17],
     color: '#7B3F00',
     icon: '🕌',
@@ -1607,7 +1619,9 @@ export const thematicRoutes: ThematicRoute[] = [
   {
     id: 'bosphorus-line',
     name: 'Boğaz Hattı: Barbaros\'tan Yahya Efendi\'ye',
+    nameEn: 'Bosphorus Line: Barbarossa to Yahya Efendi',
     description: 'Beşiktaş İskelesi\'nden Boğaz yamacına tırmanan bu rota, deniz ve manevi tarihi birleştirir.',
+    descriptionEn: 'Climbing from Beşiktaş pier to the Bosphorus slopes, this route blends maritime and spiritual history.',
     locationIds: [82, 41],
     color: '#1E90FF',
     icon: '⚓',
@@ -1617,7 +1631,9 @@ export const thematicRoutes: ThematicRoute[] = [
   {
     id: 'asıyan-aydınlar',
     name: 'Aşiyan: Boğaz\'ın Şairleri',
+    nameEn: 'Aşiyan: Poets of the Bosphorus',
     description: 'Rumelihisarı yamaçlarında Türk edebiyatının büyük isimlerinin kabrine ziyaret.',
+    descriptionEn: 'Visit the graves of great Turkish literary figures on the slopes of Rumelihisarı.',
     locationIds: [100, 101, 102, 103],
     color: '#9B59B6',
     icon: '📜',

@@ -8,6 +8,7 @@ import { locations, Location, LocationCategory, categoryConfig, thematicRoutes }
 import { useProfile } from '@/context/ProfileContext'
 import { useTheme, tc } from '@/context/ThemeContext'
 import { useLanguage } from '@/context/LanguageContext'
+import type { Translations } from '@/data/translations'
 import LocationCard from './LocationCard'
 import AIPlanModal from './AIPlanModal'
 import RouteBuilderModal from './RouteBuilderModal'
@@ -38,7 +39,7 @@ function MapSkeleton() {
 
 const allCategories = Object.keys(categoryConfig) as LocationCategory[]
 
-interface NewBadge { id: string; name: string; icon: string }
+interface NewBadge { id: string; nameKey: keyof Translations; icon: string }
 
 interface InteractiveMapProps {
   externalRouteId?: string | null
@@ -49,7 +50,7 @@ interface InteractiveMapProps {
 export default function InteractiveMap({ externalRouteId, onExternalRouteChange, triggerLocationId }: InteractiveMapProps) {
   const { markVisited, isVisited, profile } = useProfile()
   const { isDark } = useTheme()
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
   const colors = tc(isDark)
 
   const [selectedLocation, setSelectedLocation]   = useState<Location | null>(null)
@@ -82,18 +83,18 @@ export default function InteractiveMap({ externalRouteId, onExternalRouteChange,
   useEffect(() => {
     if (profile.badges.length > prevBadgeCountRef.current) {
       const latestId = profile.badges[profile.badges.length - 1]
-      const badgeNames: Record<string, { name: string; icon: string }> = {
-        'istanbul-fatihi': { name: 'İstanbul Fatihi', icon: '⚔️' },
-        'sahabe-yolcusu':  { name: 'Sahabe Yolcusu',  icon: '☪️' },
-        'gonul-sultani':   { name: 'Gönül Sultanı',   icon: '✨' },
-        'ilim-talebesi':   { name: 'İlim Talebesi',   icon: '📚' },
-        'devlet-ricali':   { name: 'Devlet Ricali',   icon: '🏛️' },
-        'kultur-mirasci':  { name: 'Kültür Mirasçısı',icon: '🎭' },
-        'mimar-sinan':     { name: "Sinan'ın İzinde", icon: '⚒️' },
-        'istanbul-rehberi':{ name: 'İstanbul Rehberi',icon: '🗺️' },
+      const badgeMeta: Record<string, { nameKey: keyof Translations; icon: string }> = {
+        'istanbul-fatihi': { nameKey: 'badge_istanbul_fatihi', icon: '⚔️' },
+        'sahabe-yolcusu':  { nameKey: 'badge_sahabe_yolcusu',  icon: '☪️' },
+        'gonul-sultani':   { nameKey: 'badge_gonul_sultani',   icon: '✨' },
+        'ilim-talebesi':   { nameKey: 'badge_ilim_talebesi',   icon: '📚' },
+        'devlet-ricali':   { nameKey: 'badge_devlet_ricali',   icon: '🏛️' },
+        'kultur-mirasci':  { nameKey: 'badge_kultur_mirasci',  icon: '🎭' },
+        'mimar-sinan':     { nameKey: 'badge_mimar_sinan',     icon: '⚒️' },
+        'istanbul-rehberi':{ nameKey: 'badge_istanbul_rehberi',icon: '🗺️' },
       }
-      if (latestId && badgeNames[latestId]) {
-        setNewBadge({ id: latestId, ...badgeNames[latestId] })
+      if (latestId && badgeMeta[latestId]) {
+        setNewBadge({ id: latestId, ...badgeMeta[latestId] })
         setTimeout(() => setNewBadge(null), 4000)
       }
     }
@@ -177,7 +178,7 @@ export default function InteractiveMap({ externalRouteId, onExternalRouteChange,
             <div>
               <div className="text-[#D4AF37] text-xs uppercase tracking-widest">{t('badge_earned')}</div>
               <div className="font-bold text-sm" style={{ color: colors.text1, fontFamily: "'Georgia', serif" }}>
-                {newBadge.name}
+                {t(newBadge.nameKey)}
               </div>
             </div>
           </motion.div>
@@ -343,7 +344,7 @@ export default function InteractiveMap({ externalRouteId, onExternalRouteChange,
                       }}
                     >
                       <span>{cfg.icon}</span>
-                      <span className="hidden sm:inline">{cfg.label}</span>
+                      <span className="hidden sm:inline">{t(`cat_${cat}` as keyof Translations)}</span>
                       <span className="px-1 py-0.5 text-[9px] rounded" style={{ background: `${cfg.color}25`, color: cfg.color }}>
                         {count}
                       </span>
@@ -430,7 +431,7 @@ export default function InteractiveMap({ externalRouteId, onExternalRouteChange,
                 }}
               >
                 <span>{route.icon}</span>
-                <span className="hidden sm:inline">{route.name}</span>
+                <span className="hidden sm:inline">{lang === 'en' ? route.nameEn : route.name}</span>
               </button>
             ))}
           </div>

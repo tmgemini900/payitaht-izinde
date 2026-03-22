@@ -6,6 +6,7 @@ import { BookOpen, Search } from 'lucide-react'
 import { locations, categoryConfig, LocationCategory } from '@/data/locations'
 import { useTheme, tc } from '@/context/ThemeContext'
 import { useLanguage } from '@/context/LanguageContext'
+import type { Translations } from '@/data/translations'
 
 const allCategories = Object.keys(categoryConfig) as LocationCategory[]
 
@@ -131,7 +132,7 @@ export default function ArchiveSection() {
                   borderRadius: '2px',
                 }}
               >
-                {cfg.icon} {cfg.label} ({count})
+                {cfg.icon} {t(`cat_${cat}` as keyof Translations)} ({count})
               </button>
             )
           })}
@@ -200,7 +201,7 @@ export default function ArchiveSection() {
                           borderRadius: '2px',
                         }}
                       >
-                        {cfg.label}
+                        {t(`cat_${loc.category}` as keyof Translations)}
                       </span>
                     </div>
 

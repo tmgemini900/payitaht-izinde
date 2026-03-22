@@ -163,6 +163,26 @@ const tr = {
   share_stats: 'İstatistiklerimi Paylaş',
   // Audio controls
   audio_speed: 'Hız',
+  // Badge names & descriptions
+  badge_istanbul_fatihi: 'İstanbul Fatihi',
+  badge_istanbul_fatihi_desc: '14 padişah türbesi',
+  badge_sahabe_yolcusu: 'Sahabe Yolcusu',
+  badge_sahabe_yolcusu_desc: '10 sahabe makamı',
+  badge_gonul_sultani: 'Gönül Sultanı',
+  badge_gonul_sultani_desc: 'Dört manevi direk',
+  badge_ilim_talebesi: 'İlim Talebesi',
+  badge_ilim_talebesi_desc: '5 alim kabri',
+  badge_devlet_ricali: 'Devlet Ricali',
+  badge_devlet_ricali_desc: '8 vezir türbesi',
+  badge_kultur_mirasci: 'Kültür Mirasçısı',
+  badge_kultur_mirasci_desc: '5 kültür insanı',
+  badge_mimar_sinan: "Sinan'ın İzinde",
+  badge_mimar_sinan_desc: '3 Sinan eseri',
+  badge_istanbul_rehberi: 'İstanbul Rehberi',
+  badge_istanbul_rehberi_desc: '50 konum',
+  // Misc
+  btn_close: 'Kapat',
+  map_visited_label: 'Ziyaret Edildi',
 }
 
 export type Translations = typeof tr
@@ -317,6 +337,26 @@ const en: Translations = {
   share_stats: 'Share My Stats',
   // Audio controls
   audio_speed: 'Speed',
+  // Badge names & descriptions
+  badge_istanbul_fatihi: 'Istanbul Conqueror',
+  badge_istanbul_fatihi_desc: '14 sultan tombs',
+  badge_sahabe_yolcusu: 'Companion Pilgrim',
+  badge_sahabe_yolcusu_desc: '10 companion shrines',
+  badge_gonul_sultani: 'Sultan of Hearts',
+  badge_gonul_sultani_desc: 'Four spiritual pillars',
+  badge_ilim_talebesi: 'Student of Knowledge',
+  badge_ilim_talebesi_desc: '5 scholar tombs',
+  badge_devlet_ricali: 'Statesman',
+  badge_devlet_ricali_desc: '8 statesman tombs',
+  badge_kultur_mirasci: 'Cultural Heir',
+  badge_kultur_mirasci_desc: '5 cultural figures',
+  badge_mimar_sinan: "In Sinan's Footsteps",
+  badge_mimar_sinan_desc: '3 Sinan masterpieces',
+  badge_istanbul_rehberi: 'Istanbul Guide',
+  badge_istanbul_rehberi_desc: '50 locations',
+  // Misc
+  btn_close: 'Close',
+  map_visited_label: 'Visited',
 }
 
 export const translations: Record<LangKey, Translations> = { tr, en }

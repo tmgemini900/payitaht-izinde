@@ -1,9 +1,11 @@
 'use client'
 
 import { useEffect, useRef, forwardRef, useMemo, useCallback } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, Polyline, ZoomControl, useMap } from 'react-leaflet'
 import { divIcon, LatLngExpression } from 'leaflet'
 import { Location, LocationCategory, categoryConfig, thematicRoutes } from '@/data/locations'
+import { useLanguage } from '@/context/LanguageContext'
+import type { Translations } from '@/data/translations'
 
 // ─── Özel SVG Marker ───────────────────────────────────────────────
 // Memoize icon creation: called for every marker, but only recreate when state changes
@@ -79,6 +81,7 @@ const LeafletMap = forwardRef<unknown, LeafletMapProps>(({
   activeRouteId,
   onLocationSelect,
 }, _ref) => {
+  const { t } = useLanguage()
   const activeRoute = useMemo(
     () => thematicRoutes.find(r => r.id === activeRouteId),
     [activeRouteId]
@@ -104,8 +107,10 @@ const LeafletMap = forwardRef<unknown, LeafletMapProps>(({
       center={[41.015, 28.97]}
       zoom={12}
       style={{ width: '100%', height: '100%' }}
-      zoomControl={false}
     >
+      {/* Zoom controls — bottom-left so they don't overlap the location panel */}
+      <ZoomControl position="bottomleft" />
+
       {/* Dark map tiles */}
       <TileLayer
         url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
@@ -153,7 +158,7 @@ const LeafletMap = forwardRef<unknown, LeafletMapProps>(({
                     fontSize: '9px', color: categoryConfig[loc.category].color,
                     textTransform: 'uppercase', letterSpacing: '2px', opacity: 0.9,
                   }}>
-                    {categoryConfig[loc.category].label}
+                    {t(`cat_${loc.category}` as keyof Translations)}
                   </span>
                 </div>
 
@@ -191,7 +196,7 @@ const LeafletMap = forwardRef<unknown, LeafletMapProps>(({
                     background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)',
                     borderRadius: '2px', fontSize: '10px', color: '#D4AF37',
                   }}>
-                    ✓ Ziyaret Edildi
+                    ✓ {t('map_visited_label')}
                   </div>
                 )}
               </div>

@@ -15,7 +15,7 @@ interface ThematicRoutesProps {
 export default function ThematicRoutes({ onRouteActivate, activeRouteId }: ThematicRoutesProps) {
   const [expandedRoute, setExpandedRoute] = useState<string | null>(null)
   const { isDark } = useTheme()
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
   const colors = tc(isDark)
 
   const handleShowOnMap = (routeId: string) => {
@@ -125,10 +125,10 @@ export default function ThematicRoutes({ onRouteActivate, activeRouteId }: Thema
                             fontSize: '1rem',
                           }}
                         >
-                          {route.name}
+                          {lang === 'en' ? route.nameEn : route.name}
                         </h3>
                         <p className="text-xs opacity-60 leading-relaxed" style={{ color: colors.text2 }}>
-                          {route.description}
+                          {lang === 'en' ? route.descriptionEn : route.description}
                         </p>
                       </div>
                     </div>
