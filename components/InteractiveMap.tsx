@@ -43,9 +43,10 @@ interface NewBadge { id: string; name: string; icon: string }
 interface InteractiveMapProps {
   externalRouteId?: string | null
   onExternalRouteChange?: (id: string | null) => void
+  triggerLocationId?: number | null
 }
 
-export default function InteractiveMap({ externalRouteId, onExternalRouteChange }: InteractiveMapProps) {
+export default function InteractiveMap({ externalRouteId, onExternalRouteChange, triggerLocationId }: InteractiveMapProps) {
   const { markVisited, isVisited, profile } = useProfile()
   const { isDark } = useTheme()
   const { t } = useLanguage()
@@ -68,6 +69,13 @@ export default function InteractiveMap({ externalRouteId, onExternalRouteChange 
       if (externalRouteId) setAiPlanIds(null)
     }
   }, [externalRouteId])
+
+  // Open location from URL deep link
+  useEffect(() => {
+    if (!triggerLocationId) return
+    const loc = locations.find(l => l.id === triggerLocationId)
+    if (loc) setSelectedLocation(loc)
+  }, [triggerLocationId])
 
   // Fix: use ref to track previous badge count
   const prevBadgeCountRef = useRef(profile.badges.length)

@@ -20,6 +20,8 @@ export interface UserProfile {
   savedRoutes: SavedRoute[]
   badges: string[]
   favoriteCategories: string[]
+  avatar?: string
+  onboardingDone?: boolean
 }
 
 const DEFAULT_PROFILE: UserProfile = {
@@ -28,6 +30,8 @@ const DEFAULT_PROFILE: UserProfile = {
   savedRoutes: [],
   badges: [],
   favoriteCategories: [],
+  avatar: '🧭',
+  onboardingDone: false,
 }
 
 // Rozet koşulları
@@ -96,6 +100,8 @@ interface ProfileContextValue {
   profile: UserProfile
   isLoaded: boolean
   setName: (name: string) => void
+  setAvatar: (avatar: string) => void
+  completeOnboarding: (name: string, avatar: string) => void
   markVisited: (locationId: number, allLocations: Location[]) => void
   unmarkVisited: (locationId: number) => void
   isVisited: (locationId: number) => boolean
@@ -117,6 +123,14 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
 
   const setName = useCallback((name: string) => {
     setProfile(prev => ({ ...prev, name }))
+  }, [setProfile])
+
+  const setAvatar = useCallback((avatar: string) => {
+    setProfile(prev => ({ ...prev, avatar }))
+  }, [setProfile])
+
+  const completeOnboarding = useCallback((name: string, avatar: string) => {
+    setProfile(prev => ({ ...prev, name: name.trim() || prev.name, avatar, onboardingDone: true }))
   }, [setProfile])
 
   const markVisited = useCallback((locationId: number, allLocations: Location[]) => {
@@ -176,6 +190,8 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
       profile,
       isLoaded,
       setName,
+      setAvatar,
+      completeOnboarding,
       markVisited,
       unmarkVisited,
       isVisited,

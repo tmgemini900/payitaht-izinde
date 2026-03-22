@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Navigation from '@/components/Navigation'
 import Hero from '@/components/Hero'
 import InteractiveMap from '@/components/InteractiveMap'
@@ -8,29 +8,51 @@ import ThematicRoutes from '@/components/ThematicRoutes'
 import ArchiveSection from '@/components/ArchiveSection'
 import BadgesSection from '@/components/BadgesSection'
 import EvliyaGuide from '@/components/EvliyaGuide'
+import WelcomeModal from '@/components/WelcomeModal'
 import { useLanguage } from '@/context/LanguageContext'
 import { useTheme, tc } from '@/context/ThemeContext'
 
 export default function Home() {
-  const [activeRouteId, setActiveRouteId] = useState<string | null>(null)
+  const [activeRouteId,     setActiveRouteId]     = useState<string | null>(null)
+  const [triggerLocationId, setTriggerLocationId] = useState<number | null>(null)
+
   const { t } = useLanguage()
   const { isDark } = useTheme()
   const colors = tc(isDark)
 
+  // Handle ?loc=ID deep link
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const locId  = params.get('loc')
+    if (locId) {
+      const id = parseInt(locId, 10)
+      if (!isNaN(id)) {
+        setTriggerLocationId(id)
+        // Scroll to map after a brief delay
+        setTimeout(() => document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' }), 600)
+        // Clean the URL without causing a navigation
+        window.history.replaceState({}, '', window.location.pathname)
+      }
+    }
+  }, [])
+
   const handleRouteActivate = (routeId: string | null) => {
     setActiveRouteId(routeId)
     if (routeId) {
-      setTimeout(() => {
-        document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' })
-      }, 100)
+      setTimeout(() => document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' }), 100)
     }
   }
 
   return (
     <main className="min-h-screen ottoman-pattern">
+      <WelcomeModal />
       <Navigation />
       <Hero />
-      <InteractiveMap externalRouteId={activeRouteId} onExternalRouteChange={setActiveRouteId} />
+      <InteractiveMap
+        externalRouteId={activeRouteId}
+        onExternalRouteChange={setActiveRouteId}
+        triggerLocationId={triggerLocationId}
+      />
       <ThematicRoutes onRouteActivate={handleRouteActivate} activeRouteId={activeRouteId} />
       <ArchiveSection />
       <BadgesSection />

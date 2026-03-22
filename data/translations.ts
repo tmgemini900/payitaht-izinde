@@ -146,6 +146,23 @@ const tr = {
   evliya_minimize: 'Küçült',
   evliya_close: 'Kapat',
   evliya_open: 'Evliya Çelebi ile konuş',
+  // Welcome / Onboarding
+  welcome_title: "Payitaht'ın İzinde",
+  welcome_subtitle: "İstanbul'un 8 asırlık manevi ve tarihi mirasını keşfetmeye hazır mısın?",
+  welcome_name_label: 'Seni nasıl çağırayım?',
+  welcome_name_placeholder: 'İsmin...',
+  welcome_avatar_label: 'Bir avatar seç',
+  welcome_start: 'Keşfetmeye Başla',
+  welcome_skip: 'Atla',
+  welcome_feature1: '124 türbe ve manevi mekan',
+  welcome_feature2: 'Sesli anlatım ve tematik rotalar',
+  welcome_feature3: 'Başarı rozetleri ve ilerleme takibi',
+  // Sharing
+  share_location: 'Paylaş',
+  share_copied: 'Kopyalandı!',
+  share_stats: 'İstatistiklerimi Paylaş',
+  // Audio controls
+  audio_speed: 'Hız',
 }
 
 export type Translations = typeof tr
@@ -283,6 +300,23 @@ const en: Translations = {
   evliya_minimize: 'Minimize',
   evliya_close: 'Close',
   evliya_open: 'Talk to Evliya Çelebi',
+  // Welcome / Onboarding
+  welcome_title: "In the Footsteps of the Capital",
+  welcome_subtitle: "Ready to explore Istanbul's 8 centuries of spiritual and historical heritage?",
+  welcome_name_label: 'What shall I call you?',
+  welcome_name_placeholder: 'Your name...',
+  welcome_avatar_label: 'Choose an avatar',
+  welcome_start: 'Start Exploring',
+  welcome_skip: 'Skip',
+  welcome_feature1: '124 tombs and spiritual sites',
+  welcome_feature2: 'Audio narration and thematic routes',
+  welcome_feature3: 'Achievement badges and progress tracking',
+  // Sharing
+  share_location: 'Share',
+  share_copied: 'Copied!',
+  share_stats: 'Share My Stats',
+  // Audio controls
+  audio_speed: 'Speed',
 }
 
 export const translations: Record<LangKey, Translations> = { tr, en }

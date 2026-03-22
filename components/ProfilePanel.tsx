@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, User, Map, Trophy, Trash2, Route, Edit2, Check, Star } from 'lucide-react'
+import { X, User, Map, Trophy, Trash2, Route, Edit2, Check, Star, Share2 } from 'lucide-react'
 import { useProfile, BADGE_CONDITIONS } from '@/context/ProfileContext'
 import { locations, categoryConfig } from '@/data/locations'
 import { useTheme, tc } from '@/context/ThemeContext'
@@ -28,10 +28,11 @@ const ALL_BADGES = [
 
 export default function ProfilePanel({ isOpen, onClose }: ProfilePanelProps) {
   const { profile, setName, deleteRoute, visitedCount, clearAll } = useProfile()
-  const [activeTab, setActiveTab] = useState<Tab>('stats')
+  const [activeTab,     setActiveTab]     = useState<Tab>('stats')
   const [isEditingName, setIsEditingName] = useState(false)
-  const [nameInput, setNameInput] = useState(profile.name)
-  const [confirmClear, setConfirmClear] = useState(false)
+  const [nameInput,     setNameInput]     = useState(profile.name)
+  const [confirmClear,  setConfirmClear]  = useState(false)
+  const [shareCopied,   setShareCopied]   = useState(false)
   const { isDark } = useTheme()
   const { t, lang } = useLanguage()
   const colors = tc(isDark)
@@ -39,6 +40,29 @@ export default function ProfilePanel({ isOpen, onClose }: ProfilePanelProps) {
   const saveName = () => {
     if (nameInput.trim()) setName(nameInput.trim())
     setIsEditingName(false)
+  }
+
+  const handleShareStats = async () => {
+    const totalLocs = locations.length
+    const pct       = Math.round((visitedCount / totalLocs) * 100)
+    const badgeIcons = profile.badges
+      .map(id => BADGE_CONDITIONS.find(b => b.id === id)?.icon ?? '')
+      .join(' ')
+    const text = lang === 'tr'
+      ? `İstanbul'u %${pct} keşfettim! ${visitedCount} mekan ziyaret ettim.${badgeIcons ? ` Rozetlerim: ${badgeIcons}` : ''} 🗺️ payitaht-izinde.vercel.app`
+      : `I've explored ${pct}% of Istanbul! Visited ${visitedCount} locations.${badgeIcons ? ` Badges: ${badgeIcons}` : ''} 🗺️ payitaht-izinde.vercel.app`
+
+    if (typeof navigator.share === 'function') {
+      try {
+        await navigator.share({ title: lang === 'tr' ? "Payitaht'ın İzinde" : 'In the Footsteps of the Capital', text, url: 'https://payitaht-izinde.vercel.app' })
+        return
+      } catch { /* fall through */ }
+    }
+    try {
+      await navigator.clipboard.writeText(text)
+      setShareCopied(true)
+      setTimeout(() => setShareCopied(false), 2500)
+    } catch { /* ignore */ }
   }
 
   const visitedByCategory = Object.keys(categoryConfig).reduce<Record<string, number>>((acc, cat) => {
@@ -91,15 +115,16 @@ export default function ProfilePanel({ isOpen, onClose }: ProfilePanelProps) {
             <div className="flex-shrink-0 p-5 border-b" style={{ borderColor: `${colors.gold}15` }}>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div
-                    className="w-12 h-12 rounded-full flex items-center justify-center text-2xl"
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    className="w-12 h-12 rounded-full flex items-center justify-center text-2xl cursor-default"
                     style={{
                       background: `radial-gradient(circle, ${colors.gold}22, ${colors.gold}06)`,
                       border: `2px solid ${colors.gold}44`,
                     }}
                   >
-                    🧭
-                  </div>
+                    {profile.avatar ?? '🧭'}
+                  </motion.div>
                   <div>
                     {isEditingName ? (
                       <div className="flex items-center gap-2">
@@ -137,9 +162,30 @@ export default function ProfilePanel({ isOpen, onClose }: ProfilePanelProps) {
                     </div>
                   </div>
                 </div>
-                <button onClick={onClose} className="opacity-40 hover:opacity-80 transition-opacity" style={{ color: colors.text2 }}>
-                  <X size={18} />
-                </button>
+                <div className="flex items-center gap-2">
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={handleShareStats}
+                    className="flex items-center justify-center w-8 h-8 rounded-full transition-all"
+                    style={{
+                      background: shareCopied ? 'rgba(46,139,87,0.2)' : `${colors.gold}15`,
+                      border: `1px solid ${shareCopied ? 'rgba(46,139,87,0.5)' : colors.gold + '33'}`,
+                      color: shareCopied ? '#2E8B57' : colors.gold,
+                    }}
+                    title={t('share_stats')}
+                  >
+                    <AnimatePresence mode="wait">
+                      {shareCopied
+                        ? <motion.span key="c" initial={{ scale: 0 }} animate={{ scale: 1 }}><Check size={13} /></motion.span>
+                        : <motion.span key="s" initial={{ scale: 0 }} animate={{ scale: 1 }}><Share2 size={13} /></motion.span>
+                      }
+                    </AnimatePresence>
+                  </motion.button>
+                  <button onClick={onClose} className="opacity-40 hover:opacity-80 transition-opacity" style={{ color: colors.text2 }}>
+                    <X size={18} />
+                  </button>
+                </div>
               </div>
 
               {/* Quick stats */}
