@@ -1,0 +1,232 @@
+@import "tailwindcss";
+
+/* ─── Osmanlı Renk Paleti ─────────────────────────────── */
+:root {
+  --ottoman-crimson:    #8B1A1A;
+  --ottoman-gold:       #D4AF37;
+  --ottoman-gold-light: #F0D060;
+  --ottoman-navy:       #1a1a2e;
+  --ottoman-dark:       #0f0f1e;
+  --ottoman-ivory:      #F5F0E8;
+  --ottoman-cream:      #EDE0C4;
+  --ottoman-teal:       #2C7873;
+  --ottoman-turquoise:  #3EADA1;
+}
+
+/* ─── Temel Stiller ───────────────────────────────────── */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--ottoman-dark);
+  color: var(--ottoman-ivory);
+  font-family: 'Georgia', 'Times New Roman', serif;
+  overflow-x: hidden;
+}
+
+/* ─── Özel Scrollbar ──────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--ottoman-navy);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--ottoman-gold);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ottoman-gold-light);
+}
+
+/* ─── Osmanlı Arabesk Arka Plan Deseni ────────────────── */
+.ottoman-pattern {
+  background-color: var(--ottoman-dark);
+  background-image:
+    radial-gradient(circle at 25% 25%, rgba(212,175,55,0.04) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(139,26,26,0.06) 0%, transparent 50%);
+}
+
+.ottoman-pattern-light {
+  background-image:
+    radial-gradient(circle at 20% 50%, rgba(212,175,55,0.08) 0%, transparent 40%),
+    radial-gradient(circle at 80% 50%, rgba(139,26,26,0.08) 0%, transparent 40%);
+}
+
+/* ─── Arabesk Çerçeve ─────────────────────────────────── */
+.arabesque-border {
+  border: 1px solid rgba(212,175,55,0.3);
+  position: relative;
+}
+.arabesque-border::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 1px solid rgba(212,175,55,0.15);
+  pointer-events: none;
+}
+
+/* ─── Altın Gradient Metin ────────────────────────────── */
+.text-gold-gradient {
+  background: linear-gradient(135deg, var(--ottoman-gold), var(--ottoman-gold-light), var(--ottoman-gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Hat Sanatı Başlık Stili ─────────────────────────── */
+.calligraphy-title {
+  font-family: 'Georgia', serif;
+  letter-spacing: 0.05em;
+  text-shadow: 0 0 30px rgba(212,175,55,0.4);
+}
+
+/* ─── Osmanlı Kart ────────────────────────────────────── */
+.ottoman-card {
+  background: linear-gradient(135deg, rgba(26,26,46,0.95), rgba(15,15,30,0.98));
+  border: 1px solid rgba(212,175,55,0.25);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+.ottoman-card:hover {
+  border-color: rgba(212,175,55,0.55);
+  box-shadow: 0 8px 32px rgba(212,175,55,0.1);
+  transform: translateY(-2px);
+}
+
+/* ─── Tuğra Ayırıcı ───────────────────────────────────── */
+.tugra-divider {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: var(--ottoman-gold);
+  opacity: 0.6;
+}
+.tugra-divider::before,
+.tugra-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--ottoman-gold), transparent);
+}
+
+/* ─── Kabartma Efekti ─────────────────────────────────── */
+.emboss-effect {
+  text-shadow:
+    1px 1px 0 rgba(212,175,55,0.3),
+    -1px -1px 0 rgba(0,0,0,0.5);
+}
+
+/* ─── Parlama Animasyonu ──────────────────────────────── */
+@keyframes golden-glow {
+  0%, 100% { box-shadow: 0 0 10px rgba(212,175,55,0.2); }
+  50%       { box-shadow: 0 0 25px rgba(212,175,55,0.5), 0 0 50px rgba(212,175,55,0.2); }
+}
+.glow-animate {
+  animation: golden-glow 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-8px); }
+}
+.float-animate {
+  animation: float 4s ease-in-out infinite;
+}
+
+/* ─── Kapı Kemerli Kart ───────────────────────────────── */
+.arch-card {
+  clip-path: polygon(0 5%, 5% 0, 95% 0, 100% 5%, 100% 95%, 95% 100%, 5% 100%, 0 95%);
+}
+
+/* ─── Osmanlı Buton ───────────────────────────────────── */
+.btn-ottoman {
+  background: linear-gradient(135deg, var(--ottoman-crimson), #A52020);
+  border: 1px solid var(--ottoman-gold);
+  color: var(--ottoman-gold-light);
+  padding: 0.6rem 1.5rem;
+  font-family: 'Georgia', serif;
+  letter-spacing: 0.05em;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+.btn-ottoman:hover {
+  background: linear-gradient(135deg, #A52020, var(--ottoman-crimson));
+  box-shadow: 0 0 20px rgba(139,26,26,0.4);
+}
+
+.btn-gold {
+  background: linear-gradient(135deg, var(--ottoman-gold), #B8941F);
+  border: 1px solid var(--ottoman-gold-light);
+  color: var(--ottoman-dark);
+  padding: 0.6rem 1.5rem;
+  font-family: 'Georgia', serif;
+  font-weight: bold;
+  letter-spacing: 0.05em;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+.btn-gold:hover {
+  background: linear-gradient(135deg, var(--ottoman-gold-light), var(--ottoman-gold));
+  box-shadow: 0 0 20px rgba(212,175,55,0.4);
+}
+
+/* ─── Leaflet Harita Stilleri ─────────────────────────── */
+.leaflet-container {
+  background: #1a1a2e !important;
+}
+.leaflet-popup-content-wrapper {
+  background: rgba(15,15,30,0.97) !important;
+  border: 1px solid rgba(212,175,55,0.4) !important;
+  color: var(--ottoman-ivory) !important;
+  border-radius: 2px !important;
+  backdrop-filter: blur(10px);
+}
+.leaflet-popup-tip {
+  background: rgba(212,175,55,0.4) !important;
+}
+.leaflet-popup-close-button {
+  color: var(--ottoman-gold) !important;
+}
+.custom-marker {
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  border: 2px solid rgba(255,255,255,0.3);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+
+/* ─── Kategori Rozetleri ──────────────────────────────── */
+.badge-padisah  { background: rgba(212,175,55,0.2);  border-color: #D4AF37; color: #D4AF37; }
+.badge-sahabe   { background: rgba(46,139,87,0.2);   border-color: #2E8B57; color: #5DBD8A; }
+.badge-evliya   { background: rgba(139,26,26,0.2);   border-color: #8B1A1A; color: #E05555; }
+.badge-alim     { background: rgba(52,152,219,0.2);  border-color: #3498DB; color: #7EC8F0; }
+.badge-devlet   { background: rgba(155,89,182,0.2);  border-color: #9B59B6; color: #C39BD3; }
+.badge-kulturel { background: rgba(230,126,34,0.2);  border-color: #E67E22; color: #F0A24C; }
+
+/* ─── Sis Efekti (Fog of War) ─────────────────────────── */
+.fog-overlay {
+  background: radial-gradient(circle at center, transparent 30%, rgba(15,15,30,0.9) 100%);
+  pointer-events: none;
+}
+
+/* ─── Başarı Madalyası ────────────────────────────────── */
+@keyframes medal-shine {
+  0%   { transform: rotate(-5deg) scale(1); }
+  50%  { transform: rotate(5deg)  scale(1.05); }
+  100% { transform: rotate(-5deg) scale(1); }
+}
+.medal-animate {
+  animation: medal-shine 2s ease-in-out;
+}
+
+/* ─── Genel Yardımcılar ───────────────────────────────── */
+.section-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
