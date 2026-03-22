@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, MapPin, Clock, Users, Building2, Volume2, VolumeX, Share2, Check } from 'lucide-react'
 import { Location, categoryConfig } from '@/data/locations'
@@ -45,39 +45,63 @@ function Waveform({ isActive, color }: { isActive: boolean; color: string }) {
 }
 
 export default function LocationCard({ location, onClose }: LocationCardProps) {
-  const [isSpeaking,   setIsSpeaking]   = useState(false)
-  const [speed,        setSpeed]        = useState(1.0)
-  const [voices,       setVoices]       = useState<SpeechSynthesisVoice[]>([])
-  const [shareCopied,  setShareCopied]  = useState(false)
+  const [isSpeaking,  setIsSpeaking]  = useState(false)
+  const [speed,       setSpeed]       = useState(1.0)
+  const [voices,      setVoices]      = useState<SpeechSynthesisVoice[]>([])
+  const [shareCopied, setShareCopied] = useState(false)
+
+  // Keep utterance in ref to prevent GC mid-playback (Chrome bug)
+  const utteranceRef    = useRef<SpeechSynthesisUtterance | null>(null)
+  // Chrome: synthesis silently pauses after ~15 s → keep-alive interval
+  const resumeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const { isDark } = useTheme()
   const { t, lang } = useLanguage()
   const colors = tc(isDark)
 
-  // Load TTS voices
+  // ── Load TTS voices ─────────────────────────────────────────────
   useEffect(() => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return
     const load = () => setVoices(window.speechSynthesis.getVoices())
     load()
     window.speechSynthesis.onvoiceschanged = load
-    return () => { window.speechSynthesis.onvoiceschanged = null }
+    return () => {
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      window.speechSynthesis.onvoiceschanged = null
+    }
   }, [])
 
-  // Cancel on location/lang change
+  // ── Cancel on location / lang change ───────────────────────────
   useEffect(() => {
-    setIsSpeaking(false)
+    stopSpeech()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location?.id, lang])
+
+  // ── Cleanup on unmount ──────────────────────────────────────────
+  useEffect(() => {
+    return () => stopSpeech()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  function stopSpeech() {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel()
     }
-  }, [location, lang])
+    if (resumeIntervalRef.current) {
+      clearInterval(resumeIntervalRef.current)
+      resumeIntervalRef.current = null
+    }
+    utteranceRef.current = null
+    setIsSpeaking(false)
+  }
 
-  const getPreferredVoice = useCallback(() => {
+  const getPreferredVoice = useCallback((): SpeechSynthesisVoice | null => {
     const code = lang === 'tr' ? 'tr' : 'en'
     const filtered = voices.filter(v => v.lang.toLowerCase().startsWith(code))
-    // Prefer Google (network) voices — significantly better quality
+    // Google voices are significantly better quality; prefer them
     return (
       filtered.find(v => v.name.toLowerCase().includes('google')) ||
-      filtered.find(v => !v.localService) ||
+      filtered.find(v => !v.localService) ||     // network voice as fallback
       filtered[0] ||
       null
     )
@@ -87,29 +111,62 @@ export default function LocationCard({ location, onClose }: LocationCardProps) {
     if (!location || typeof window === 'undefined' || !('speechSynthesis' in window)) return
 
     if (isSpeaking) {
-      window.speechSynthesis.cancel()
-      setIsSpeaking(false)
+      stopSpeech()
       return
     }
+
+    // Always cancel first to flush any queued utterances
+    window.speechSynthesis.cancel()
 
     const parts: string[] = [location.name]
     if (location.period)
       parts.push(`${lang === 'tr' ? 'İnşa dönemi' : 'Period'}: ${location.period}.`)
     parts.push(location.description)
     if (location.buriedPersons?.length)
-      parts.push(`${lang === 'tr' ? 'Metfun şahsiyetler' : 'Buried here'}: ${location.buriedPersons.join(', ')}.`)
+      parts.push(
+        `${lang === 'tr' ? 'Metfun şahsiyetler' : 'Buried here'}: ${location.buriedPersons.join(', ')}.`
+      )
 
     const utterance = new SpeechSynthesisUtterance(parts.join('. '))
+    utteranceRef.current = utterance // Prevent GC
+
     const voice = getPreferredVoice()
     if (voice) utterance.voice = voice
-    utterance.lang    = lang === 'tr' ? 'tr-TR' : 'en-US'
-    utterance.rate    = speed
-    utterance.pitch   = lang === 'tr' ? 1.05 : 1.0
-    utterance.volume  = 1.0
+    utterance.lang   = lang === 'tr' ? 'tr-TR' : 'en-US'
+    utterance.rate   = speed
+    utterance.pitch  = lang === 'tr' ? 1.05 : 1.0
+    utterance.volume = 1.0
+
     utterance.onstart = () => setIsSpeaking(true)
-    utterance.onend   = () => setIsSpeaking(false)
-    utterance.onerror = () => setIsSpeaking(false)
+    utterance.onend   = () => {
+      setIsSpeaking(false)
+      if (resumeIntervalRef.current) { clearInterval(resumeIntervalRef.current); resumeIntervalRef.current = null }
+      utteranceRef.current = null
+    }
+    utterance.onerror = (e) => {
+      // 'interrupted' fires when we cancel() manually — not a real error
+      if (e.error !== 'interrupted' && e.error !== 'canceled') {
+        console.warn('[TTS]', e.error)
+      }
+      setIsSpeaking(false)
+      if (resumeIntervalRef.current) { clearInterval(resumeIntervalRef.current); resumeIntervalRef.current = null }
+    }
+
     window.speechSynthesis.speak(utterance)
+
+    // ── Chrome keep-alive fix ──────────────────────────────────────
+    // Chrome pauses synthesis silently after ~14 s. Periodic resume() prevents it.
+    resumeIntervalRef.current = setInterval(() => {
+      if (!window.speechSynthesis.speaking) {
+        clearInterval(resumeIntervalRef.current!)
+        resumeIntervalRef.current = null
+        return
+      }
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume()
+      }
+    }, 8000)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location, isSpeaking, lang, speed, getPreferredVoice])
 
   const handleShare = useCallback(async () => {
@@ -120,10 +177,7 @@ export default function LocationCard({ location, onClose }: LocationCardProps) {
       : `${location.name} — ${location.district} | In the Footsteps of the Capital`
 
     if (typeof navigator.share === 'function') {
-      try {
-        await navigator.share({ title: location.name, text, url })
-        return
-      } catch { /* fall through to clipboard */ }
+      try { await navigator.share({ title: location.name, text, url }); return } catch { /* fallback */ }
     }
     try {
       await navigator.clipboard.writeText(url)
@@ -150,24 +204,38 @@ export default function LocationCard({ location, onClose }: LocationCardProps) {
       {location && (
         <motion.div
           key={location.id}
-          initial={{ opacity: 0, x: 30, scale: 0.97 }}
-          animate={{ opacity: 1, x: 0, scale: 1 }}
-          exit={{ opacity: 0, x: 30, scale: 0.97 }}
-          transition={{ type: 'spring', stiffness: 350, damping: 30 }}
-          className="absolute top-4 right-4 bottom-4 w-80 z-[1000] overflow-y-auto"
+          // Mobile: slides up from bottom  |  Desktop: slides in from right
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 40 }}
+          transition={{ type: 'spring', stiffness: 320, damping: 30 }}
+          // ── Responsive layout ──────────────────────────────────────
+          // Mobile:  fixed bottom sheet, full width, max 68vh
+          // Desktop: absolute right panel inside map container
+          className={[
+            'z-[1000] overflow-y-auto',
+            // mobile
+            'fixed bottom-0 left-0 right-0 max-h-[68vh] rounded-t-2xl',
+            // sm+
+            'sm:absolute sm:top-4 sm:right-4 sm:bottom-4 sm:left-auto sm:w-80 sm:max-h-none sm:rounded-none',
+          ].join(' ')}
           style={{
             background: isDark
-              ? 'linear-gradient(180deg, rgba(10,10,25,0.98), rgba(15,15,30,0.99))'
+              ? 'linear-gradient(180deg, rgba(10,10,25,0.99), rgba(15,15,30,1))'
               : 'linear-gradient(180deg, rgba(255,252,242,0.99), rgba(248,244,230,0.99))',
             border: `1px solid ${config.color}44`,
-            borderRadius: '4px',
             backdropFilter: 'blur(20px)',
-            boxShadow: `0 8px 40px rgba(0,0,0,0.7), 0 0 0 1px ${config.color}22`,
+            boxShadow: `0 -4px 40px rgba(0,0,0,0.5), 0 0 0 1px ${config.color}22`,
           }}
         >
+          {/* Drag handle (mobile visual cue) */}
+          <div className="sm:hidden flex justify-center pt-2 pb-1">
+            <div className="w-10 h-1 rounded-full opacity-30" style={{ background: colors.gold }} />
+          </div>
+
           {/* Top color strip */}
           <div
-            className="h-1 flex-shrink-0"
+            className="h-0.5 sm:h-1 flex-shrink-0"
             style={{ background: `linear-gradient(90deg, transparent, ${config.color}, transparent)` }}
           />
 
@@ -192,21 +260,20 @@ export default function LocationCard({ location, onClose }: LocationCardProps) {
               <div className="flex items-center gap-1 flex-shrink-0 mt-1">
                 {/* Share */}
                 <motion.button
-                  whileHover={{ scale: 1.12 }}
-                  whileTap={{ scale: 0.88 }}
+                  whileHover={{ scale: 1.12 }} whileTap={{ scale: 0.88 }}
                   onClick={handleShare}
-                  className="flex items-center justify-center w-7 h-7 rounded-full transition-all"
+                  aria-label={t('share_location')}
+                  className="flex items-center justify-center w-8 h-8 rounded-full transition-all"
                   style={{
                     background: shareCopied ? 'rgba(46,139,87,0.2)' : `${colors.gold}15`,
                     border: `1px solid ${shareCopied ? 'rgba(46,139,87,0.6)' : colors.gold + '44'}`,
                     color: shareCopied ? '#2E8B57' : colors.gold,
                   }}
-                  title={t('share_location')}
                 >
                   <AnimatePresence mode="wait">
                     {shareCopied
-                      ? <motion.span key="check" initial={{ scale: 0 }} animate={{ scale: 1 }}><Check size={12} /></motion.span>
-                      : <motion.span key="share" initial={{ scale: 0 }} animate={{ scale: 1 }}><Share2 size={12} /></motion.span>
+                      ? <motion.span key="c" initial={{ scale: 0 }} animate={{ scale: 1 }}><Check size={13} /></motion.span>
+                      : <motion.span key="s" initial={{ scale: 0 }} animate={{ scale: 1 }}><Share2 size={13} /></motion.span>
                     }
                   </AnimatePresence>
                 </motion.button>
@@ -214,27 +281,27 @@ export default function LocationCard({ location, onClose }: LocationCardProps) {
                 {/* Audio play/stop */}
                 {hasSpeech && (
                   <motion.button
-                    whileHover={{ scale: 1.12 }}
-                    whileTap={{ scale: 0.88 }}
+                    whileHover={{ scale: 1.12 }} whileTap={{ scale: 0.88 }}
                     onClick={handleSpeak}
-                    className="flex items-center justify-center w-7 h-7 rounded-full transition-all"
+                    aria-label={isSpeaking ? t('loc_stop') : t('loc_listen')}
+                    className="flex items-center justify-center w-8 h-8 rounded-full transition-all"
                     style={{
                       background: isSpeaking ? `${config.color}30` : `${config.color}15`,
                       border: `1px solid ${config.color}${isSpeaking ? '88' : '44'}`,
                       color: config.color,
-                      boxShadow: isSpeaking ? `0 0 10px ${config.color}44` : 'none',
+                      boxShadow: isSpeaking ? `0 0 12px ${config.color}44` : 'none',
                     }}
-                    title={isSpeaking ? t('loc_stop') : t('loc_listen')}
                   >
-                    {isSpeaking ? <VolumeX size={12} /> : <Volume2 size={12} />}
+                    {isSpeaking ? <VolumeX size={13} /> : <Volume2 size={13} />}
                   </motion.button>
                 )}
 
                 {/* Close */}
                 <button
                   onClick={onClose}
+                  aria-label="Kapat"
                   style={{ color: colors.muted }}
-                  className="transition-colors"
+                  className="w-8 h-8 flex items-center justify-center transition-colors"
                   onMouseEnter={e => (e.currentTarget.style.color = colors.gold)}
                   onMouseLeave={e => (e.currentTarget.style.color = colors.muted)}
                 >
@@ -248,20 +315,20 @@ export default function LocationCard({ location, onClose }: LocationCardProps) {
           <div className="p-4 space-y-4">
 
             {/* Address */}
-            <div className="flex items-start gap-2 text-sm">
+            <div className="flex items-start gap-2">
               <MapPin size={14} className="flex-shrink-0 mt-0.5" style={{ color: colors.gold }} />
               <div>
-                <div className="text-xs uppercase tracking-widest mb-0.5" style={{ color: colors.gold }}>{t('loc_address')}</div>
+                <div className="text-[10px] uppercase tracking-widest mb-0.5" style={{ color: colors.gold }}>{t('loc_address')}</div>
                 <div className="text-xs leading-relaxed opacity-80" style={{ color: colors.text2 }}>{location.address}</div>
               </div>
             </div>
 
             {/* Period */}
             {location.period && (
-              <div className="flex items-start gap-2 text-sm">
+              <div className="flex items-start gap-2">
                 <Clock size={14} className="flex-shrink-0 mt-0.5" style={{ color: colors.gold }} />
                 <div>
-                  <div className="text-xs uppercase tracking-widest mb-0.5" style={{ color: colors.gold }}>{t('loc_period')}</div>
+                  <div className="text-[10px] uppercase tracking-widest mb-0.5" style={{ color: colors.gold }}>{t('loc_period')}</div>
                   <div className="text-xs opacity-80" style={{ color: colors.text2 }}>{location.period}</div>
                 </div>
               </div>
@@ -269,10 +336,10 @@ export default function LocationCard({ location, onClose }: LocationCardProps) {
 
             {/* Architect */}
             {location.architect && (
-              <div className="flex items-start gap-2 text-sm">
+              <div className="flex items-start gap-2">
                 <Building2 size={14} className="flex-shrink-0 mt-0.5" style={{ color: colors.gold }} />
                 <div>
-                  <div className="text-xs uppercase tracking-widest mb-0.5" style={{ color: colors.gold }}>{t('loc_architect')}</div>
+                  <div className="text-[10px] uppercase tracking-widest mb-0.5" style={{ color: colors.gold }}>{t('loc_architect')}</div>
                   <div className="text-xs opacity-80" style={{ color: colors.text2 }}>{location.architect}</div>
                 </div>
               </div>
@@ -280,24 +347,22 @@ export default function LocationCard({ location, onClose }: LocationCardProps) {
 
             {/* Architectural style */}
             {location.architecturalStyle && (
-              <div className="text-xs">
-                <span
-                  className="px-2 py-0.5 opacity-60"
-                  style={{
-                    background: `${colors.gold}10`,
-                    border: `1px solid ${colors.gold}20`,
-                    color: colors.text2,
-                    borderRadius: '2px',
-                  }}
-                >
-                  🏛️ {location.architecturalStyle}
-                </span>
-              </div>
+              <span
+                className="inline-block text-xs px-2 py-0.5 opacity-60"
+                style={{
+                  background: `${colors.gold}10`,
+                  border: `1px solid ${colors.gold}20`,
+                  color: colors.text2,
+                  borderRadius: '2px',
+                }}
+              >
+                🏛️ {location.architecturalStyle}
+              </span>
             )}
 
             {/* Description */}
             <div>
-              <div className="text-xs uppercase tracking-widest mb-2" style={{ color: colors.gold }}>{t('loc_about')}</div>
+              <div className="text-[10px] uppercase tracking-widest mb-2" style={{ color: colors.gold }}>{t('loc_about')}</div>
               <p
                 className="text-xs leading-relaxed opacity-75"
                 style={{ color: colors.text2, fontFamily: "'Georgia', serif" }}
@@ -306,49 +371,46 @@ export default function LocationCard({ location, onClose }: LocationCardProps) {
               </p>
             </div>
 
-            {/* ── Audio Player ── */}
+            {/* ── Audio Player ─────────────────────────────────────── */}
             {hasSpeech && (
               <div
-                className="rounded p-3 transition-all"
+                className="rounded-lg p-3 transition-all duration-300"
                 style={{
-                  background: isSpeaking ? `${config.color}0C` : `${colors.gold}06`,
-                  border: `1px solid ${isSpeaking ? config.color + '44' : colors.gold + '18'}`,
+                  background: isSpeaking ? `${config.color}0E` : `${colors.gold}07`,
+                  border: `1px solid ${isSpeaking ? config.color + '50' : colors.gold + '18'}`,
                 }}
               >
-                {/* Top row: play button + waveform */}
-                <div className="flex items-center justify-between mb-2">
+                {/* Play/stop + waveform */}
+                <div className="flex items-center justify-between mb-2.5">
                   <button
                     onClick={handleSpeak}
+                    aria-label={isSpeaking ? t('loc_stop') : t('loc_listen')}
                     className="flex items-center gap-2 text-xs font-semibold transition-colors"
                     style={{ color: isSpeaking ? config.color : colors.gold }}
                   >
                     <motion.div
-                      animate={isSpeaking ? { scale: [1, 1.15, 1] } : {}}
-                      transition={{ duration: 1.2, repeat: Infinity }}
+                      animate={isSpeaking ? { scale: [1, 1.2, 1] } : {}}
+                      transition={{ duration: 1.5, repeat: Infinity }}
                     >
-                      {isSpeaking
-                        ? <VolumeX size={13} />
-                        : <Volume2 size={13} />
-                      }
+                      {isSpeaking ? <VolumeX size={14} /> : <Volume2 size={14} />}
                     </motion.div>
-                    {isSpeaking ? t('loc_stop') : t('loc_listen')}
+                    <span>{isSpeaking ? t('loc_stop') : t('loc_listen')}</span>
                   </button>
-
-                  <Waveform isActive={isSpeaking} color={isSpeaking ? config.color : colors.gold + '55'} />
+                  <Waveform isActive={isSpeaking} color={isSpeaking ? config.color : `${colors.gold}55`} />
                 </div>
 
-                {/* Bottom row: speed selector */}
-                <div className="flex items-center gap-1">
-                  <span className="text-[9px] opacity-40 mr-1 uppercase tracking-widest" style={{ color: colors.text2 }}>
+                {/* Speed controls */}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[9px] uppercase tracking-widest opacity-40 mr-1" style={{ color: colors.text2 }}>
                     {t('audio_speed')}
                   </span>
                   {SPEEDS.map(s => (
                     <button
                       key={s.value}
-                      onClick={() => setSpeed(s.value)}
-                      className="px-1.5 py-0.5 text-[9px] rounded transition-all"
+                      onClick={() => { setSpeed(s.value); if (isSpeaking) { stopSpeech(); setTimeout(handleSpeak, 50) } }}
+                      className="px-2 py-0.5 text-[9px] rounded transition-all"
                       style={{
-                        background: speed === s.value ? `${colors.gold}22` : 'transparent',
+                        background: speed === s.value ? `${colors.gold}25` : 'transparent',
                         border: `1px solid ${speed === s.value ? colors.gold + '66' : 'transparent'}`,
                         color: speed === s.value ? colors.gold : colors.muted,
                         fontWeight: speed === s.value ? 700 : 400,
@@ -365,9 +427,7 @@ export default function LocationCard({ location, onClose }: LocationCardProps) {
             <AnimatePresence>
               {shareCopied && (
                 <motion.div
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
+                  initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                   className="flex items-center gap-2 px-3 py-2 text-xs"
                   style={{
                     background: 'rgba(46,139,87,0.12)',
@@ -385,7 +445,7 @@ export default function LocationCard({ location, onClose }: LocationCardProps) {
             {/* Buried persons */}
             {location.buriedPersons && location.buriedPersons.length > 0 && (
               <div>
-                <div className="flex items-center gap-2 text-xs uppercase tracking-widest mb-2" style={{ color: colors.gold }}>
+                <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest mb-2" style={{ color: colors.gold }}>
                   <Users size={12} />
                   {t('loc_buried')}
                 </div>
@@ -418,10 +478,9 @@ export default function LocationCard({ location, onClose }: LocationCardProps) {
 
             {/* Directions */}
             <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
               onClick={handleDirections}
-              className="w-full py-2.5 text-xs tracking-widest uppercase font-semibold transition-all"
+              className="w-full py-3 text-xs tracking-widest uppercase font-semibold transition-all"
               style={{
                 background: `linear-gradient(135deg, ${config.color}22, ${config.color}11)`,
                 border: `1px solid ${config.color}44`,
@@ -431,6 +490,9 @@ export default function LocationCard({ location, onClose }: LocationCardProps) {
             >
               {t('loc_directions')}
             </motion.button>
+
+            {/* Bottom safe area spacing on mobile */}
+            <div className="sm:hidden h-safe-bottom" style={{ height: 'env(safe-area-inset-bottom, 8px)' }} />
           </div>
         </motion.div>
       )}

@@ -6,35 +6,41 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
   const [storedValue, setStoredValue] = useState<T>(initialValue)
   const [isLoaded, setIsLoaded] = useState(false)
 
+  // Read on mount only (key shouldn't change after mount)
   useEffect(() => {
     try {
       const item = window.localStorage.getItem(key)
-      if (item) {
-        setStoredValue(JSON.parse(item))
+      if (item !== null) {
+        setStoredValue(JSON.parse(item) as T)
       }
     } catch (error) {
-      console.warn(`Error reading localStorage key "${key}":`, error)
+      console.warn(`[useLocalStorage] read "${key}":`, error)
+    } finally {
+      setIsLoaded(true)
     }
-    setIsLoaded(true)
-  }, [key])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // intentionally run once on mount
 
+  // Fix: functional updater avoids stale closure — always reads latest state
   const setValue = useCallback((value: T | ((val: T) => T)) => {
-    try {
-      const valueToStore = value instanceof Function ? value(storedValue) : value
-      setStoredValue(valueToStore)
-      window.localStorage.setItem(key, JSON.stringify(valueToStore))
-    } catch (error) {
-      console.warn(`Error setting localStorage key "${key}":`, error)
-    }
-  }, [key, storedValue])
+    setStoredValue(prev => {
+      const next = value instanceof Function ? value(prev) : value
+      try {
+        window.localStorage.setItem(key, JSON.stringify(next))
+      } catch (error) {
+        console.warn(`[useLocalStorage] write "${key}":`, error)
+      }
+      return next
+    })
+  }, [key])
 
   const removeValue = useCallback(() => {
     try {
       window.localStorage.removeItem(key)
-      setStoredValue(initialValue)
     } catch (error) {
-      console.warn(`Error removing localStorage key "${key}":`, error)
+      console.warn(`[useLocalStorage] remove "${key}":`, error)
     }
+    setStoredValue(initialValue)
   }, [key, initialValue])
 
   return { value: storedValue, setValue, removeValue, isLoaded }

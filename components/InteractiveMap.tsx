@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import dynamic from 'next/dynamic'
 import { Search, Filter, X, Wand2, Route } from 'lucide-react'
@@ -114,22 +114,27 @@ export default function InteractiveMap({ externalRouteId, onExternalRouteChange,
     markVisited(loc.id, locations)
   }, [markVisited])
 
-  const visitedIds = new Set(profile.visitedIds)
+  // Memoize the visited Set so Leaflet doesn't re-render markers on unrelated state changes
+  const visitedIds = useMemo(() => new Set(profile.visitedIds), [profile.visitedIds])
 
-  const filteredLocations = locations.filter(loc => {
-    const matchCat = activeCategories.has(loc.category)
-    const matchSearch = searchQuery === '' ||
-      loc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      loc.district.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (loc.buriedPersons ?? []).some(p => p.toLowerCase().includes(searchQuery.toLowerCase()))
+  // Memoize filtered locations — expensive filter + includes over 100+ items
+  const filteredLocations = useMemo(() => {
+    const q = searchQuery.toLowerCase()
+    return locations.filter(loc => {
+      const matchCat = activeCategories.has(loc.category)
+      const matchSearch = q === '' ||
+        loc.name.toLowerCase().includes(q) ||
+        loc.district.toLowerCase().includes(q) ||
+        (loc.buriedPersons ?? []).some(p => p.toLowerCase().includes(q))
 
-    if (aiPlanIds) return matchCat && matchSearch && aiPlanIds.includes(loc.id)
-    if (activeRouteId) {
-      const route = thematicRoutes.find(r => r.id === activeRouteId)
-      return matchCat && matchSearch && (route?.locationIds.includes(loc.id) ?? false)
-    }
-    return matchCat && matchSearch
-  })
+      if (aiPlanIds) return matchCat && matchSearch && aiPlanIds.includes(loc.id)
+      if (activeRouteId) {
+        const route = thematicRoutes.find(r => r.id === activeRouteId)
+        return matchCat && matchSearch && (route?.locationIds.includes(loc.id) ?? false)
+      }
+      return matchCat && matchSearch
+    })
+  }, [activeCategories, searchQuery, activeRouteId, aiPlanIds])
 
   const handleApplyPlan = (ids: number[]) => {
     setAiPlanIds(ids)

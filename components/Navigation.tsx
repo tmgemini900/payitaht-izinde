@@ -31,9 +31,19 @@ export default function Navigation() {
     { label: t('nav_badges'),  href: '#badges',  icon: Trophy },
   ]
 
+  // RAF-based scroll handler — fires at most once per animation frame instead of every pixel
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 50)
-    window.addEventListener('scroll', onScroll)
+    let ticking = false
+    const onScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          setScrolled(window.scrollY > 50)
+          ticking = false
+        })
+        ticking = true
+      }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 

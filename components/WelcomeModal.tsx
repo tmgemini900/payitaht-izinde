@@ -15,6 +15,9 @@ export default function WelcomeModal() {
   const { t, lang } = useLanguage()
   const colors = tc(isDark)
 
+  // Strip potential injection characters from name input
+  const sanitizeName = (s: string) => s.replace(/[<>'"&]/g, '').slice(0, 25)
+
   const [name, setName]     = useState('')
   const [avatar, setAvatar] = useState('🧭')
   const [step, setStep]     = useState<1 | 2>(1)
@@ -160,7 +163,7 @@ export default function WelcomeModal() {
                       type="text"
                       placeholder={t('welcome_name_placeholder')}
                       value={name}
-                      onChange={e => setName(e.target.value)}
+                      onChange={e => setName(sanitizeName(e.target.value))}
                       onKeyDown={e => e.key === 'Enter' && handleNext()}
                       maxLength={25}
                       autoFocus
@@ -180,18 +183,21 @@ export default function WelcomeModal() {
                     <label className="block text-xs uppercase tracking-widest mb-2 opacity-70" style={{ color: colors.gold }}>
                       {t('welcome_avatar_label')}
                     </label>
-                    <div className="grid grid-cols-6 gap-2">
+                    {/* 4 cols on mobile, 6 on sm+ for better tap targets */}
+                    <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                       {AVATARS.map(av => (
                         <motion.button
                           key={av}
                           whileHover={{ scale: 1.15 }}
                           whileTap={{ scale: 0.9 }}
                           onClick={() => setAvatar(av)}
-                          className="aspect-square flex items-center justify-center text-xl rounded transition-all"
+                          // Minimum 44px touch target for accessibility
+                          className="aspect-square flex items-center justify-center rounded transition-all"
                           style={{
+                            minHeight: '44px',
                             background: avatar === av ? `${colors.gold}25` : isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
                             border: `1px solid ${avatar === av ? colors.gold + '88' : colors.border}`,
-                            fontSize: '1.3rem',
+                            fontSize: '1.4rem',
                           }}
                         >
                           {av}
