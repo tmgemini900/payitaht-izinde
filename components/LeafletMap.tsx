@@ -67,7 +67,7 @@ interface LeafletMapProps {
   visitedIds: Set<number>
   activeRouteId: string | null
   onLocationSelect: (loc: Location) => void
-  mapRef: React.MutableRefObject<{ flyTo: (lat: number, lng: number) => void } | null>
+  mapRef?: React.MutableRefObject<{ flyTo: (lat: number, lng: number) => void } | null>
 }
 
 const LeafletMap = forwardRef<unknown, LeafletMapProps>(({

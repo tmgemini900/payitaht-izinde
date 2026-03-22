@@ -2,8 +2,10 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { BookOpen, Search, Filter } from 'lucide-react'
+import { BookOpen, Search } from 'lucide-react'
 import { locations, categoryConfig, LocationCategory } from '@/data/locations'
+import { useTheme, tc } from '@/context/ThemeContext'
+import { useLanguage } from '@/context/LanguageContext'
 
 const allCategories = Object.keys(categoryConfig) as LocationCategory[]
 
@@ -11,6 +13,9 @@ export default function ArchiveSection() {
   const [activeCategory, setActiveCategory] = useState<LocationCategory | 'all'>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<'name' | 'category' | 'district'>('category')
+  const { isDark } = useTheme()
+  const { t } = useLanguage()
+  const colors = tc(isDark)
 
   const filtered = locations
     .filter(loc => {
@@ -29,20 +34,24 @@ export default function ArchiveSection() {
 
   return (
     <section id="archive" className="py-20 relative">
-      <div className="absolute inset-0 bg-gradient-to-b from-[#050510] via-[#0f0f1e] to-[#0f0f1e]" />
+      <div className="absolute inset-0" style={{
+        background: isDark
+          ? 'linear-gradient(to bottom, #050510, #0f0f1e, #0f0f1e)'
+          : 'linear-gradient(to bottom, #E8D8B4, #F4ECD8, #F4ECD8)',
+      }} />
 
       <div className="section-container relative z-10">
-        {/* Başlık */}
+        {/* Header */}
         <div className="text-center mb-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 mb-4 border border-[rgba(212,175,55,0.3)] text-[#D4AF37] text-xs tracking-widest uppercase"
-            style={{ borderRadius: '2px' }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 mb-4 border text-xs tracking-widest uppercase"
+            style={{ borderColor: `${colors.gold}50`, color: colors.gold, borderRadius: '2px' }}
           >
             <BookOpen size={12} />
-            Arşiv
+            {t('archive_section_badge')}
           </motion.div>
 
           <motion.h2
@@ -53,59 +62,59 @@ export default function ArchiveSection() {
             className="text-3xl md:text-5xl font-bold text-gold-gradient calligraphy-title mb-4"
             style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
           >
-            Türbeler Envanteri
+            {t('archive_title')}
           </motion.h2>
         </div>
 
-        {/* Arama ve filtreler */}
+        {/* Search and filters */}
         <div className="flex flex-wrap gap-3 mb-6 items-center justify-between">
-          {/* Arama */}
           <div className="relative flex-1 min-w-[200px] max-w-md">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#D4AF37] opacity-50" />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-50" style={{ color: colors.gold }} />
             <input
               type="text"
-              placeholder="İsim, semt veya şahsiyet ara..."
+              placeholder={t('archive_search')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm text-[#EDE0C4] placeholder-[rgba(237,224,196,0.3)] outline-none"
+              className="w-full pl-9 pr-4 py-2 text-sm outline-none"
               style={{
-                background: 'rgba(26,26,46,0.8)',
-                border: '1px solid rgba(212,175,55,0.2)',
+                background: colors.inputBg,
+                border: `1px solid ${colors.border}`,
+                color: colors.text2,
                 borderRadius: '2px',
               }}
             />
           </div>
 
-          {/* Sıralama */}
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-            className="px-3 py-2 text-xs text-[#EDE0C4] outline-none"
+            className="px-3 py-2 text-xs outline-none"
             style={{
-              background: 'rgba(26,26,46,0.8)',
-              border: '1px solid rgba(212,175,55,0.2)',
+              background: colors.inputBg,
+              border: `1px solid ${colors.border}`,
+              color: colors.text2,
               borderRadius: '2px',
             }}
           >
-            <option value="category">Kategoriye Göre</option>
-            <option value="name">İsme Göre (A-Z)</option>
-            <option value="district">Semte Göre</option>
+            <option value="category">{t('archive_sort_cat')}</option>
+            <option value="name">{t('archive_sort_name')}</option>
+            <option value="district">{t('archive_sort_district')}</option>
           </select>
         </div>
 
-        {/* Kategori filtreleri */}
+        {/* Category filters */}
         <div className="flex flex-wrap gap-2 mb-8">
           <button
             onClick={() => setActiveCategory('all')}
             className="px-3 py-1.5 text-xs transition-all"
             style={{
-              background: activeCategory === 'all' ? 'rgba(212,175,55,0.2)' : 'rgba(26,26,46,0.6)',
-              border: '1px solid rgba(212,175,55,0.3)',
-              color: activeCategory === 'all' ? '#D4AF37' : 'rgba(237,224,196,0.4)',
+              background: activeCategory === 'all' ? `${colors.gold}22` : colors.inputBg,
+              border: `1px solid ${colors.gold}44`,
+              color: activeCategory === 'all' ? colors.gold : colors.muted,
               borderRadius: '2px',
             }}
           >
-            Tümü ({locations.length})
+            {t('archive_all')} ({locations.length})
           </button>
           {allCategories.map((cat) => {
             const cfg = categoryConfig[cat]
@@ -116,9 +125,9 @@ export default function ArchiveSection() {
                 onClick={() => setActiveCategory(cat)}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs transition-all"
                 style={{
-                  background: activeCategory === cat ? `${cfg.color}22` : 'rgba(26,26,46,0.6)',
-                  border: `1px solid ${activeCategory === cat ? cfg.color + '66' : 'rgba(212,175,55,0.15)'}`,
-                  color: activeCategory === cat ? cfg.color : 'rgba(237,224,196,0.4)',
+                  background: activeCategory === cat ? `${cfg.color}22` : colors.inputBg,
+                  border: `1px solid ${activeCategory === cat ? cfg.color + '66' : colors.border}`,
+                  color: activeCategory === cat ? cfg.color : colors.muted,
                   borderRadius: '2px',
                 }}
               >
@@ -128,12 +137,12 @@ export default function ArchiveSection() {
           })}
         </div>
 
-        {/* Sonuç sayısı */}
-        <div className="text-xs text-[#EDE0C4] opacity-40 mb-4">
-          {filtered.length} kayıt bulundu
+        {/* Result count */}
+        <div className="text-xs opacity-40 mb-4" style={{ color: colors.text2 }}>
+          {filtered.length} {t('archive_results')}
         </div>
 
-        {/* Liste */}
+        {/* List */}
         <div className="space-y-2">
           <AnimatePresence>
             {filtered.map((loc, i) => {
@@ -147,8 +156,8 @@ export default function ArchiveSection() {
                   transition={{ delay: Math.min(i * 0.02, 0.3) }}
                   className="flex items-start gap-4 p-4 group cursor-pointer transition-all duration-200"
                   style={{
-                    background: 'rgba(26,26,46,0.4)',
-                    border: `1px solid rgba(212,175,55,0.08)`,
+                    background: colors.sectionBg,
+                    border: `1px solid ${colors.border}`,
                     borderRadius: '2px',
                   }}
                   onMouseEnter={(e) => {
@@ -156,11 +165,10 @@ export default function ArchiveSection() {
                     e.currentTarget.style.borderColor = `${cfg.color}33`
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(26,26,46,0.4)'
-                    e.currentTarget.style.borderColor = 'rgba(212,175,55,0.08)'
+                    e.currentTarget.style.background = colors.sectionBg
+                    e.currentTarget.style.borderColor = colors.border
                   }}
                 >
-                  {/* Numara */}
                   <div
                     className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-xs font-bold"
                     style={{
@@ -173,15 +181,13 @@ export default function ArchiveSection() {
                     {i + 1}
                   </div>
 
-                  {/* Kategori ikonu */}
                   <div className="flex-shrink-0 text-lg mt-0.5">{cfg.icon}</div>
 
-                  {/* Bilgiler */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <h3
-                        className="text-sm font-semibold text-[#F5F0E8] group-hover:text-[#D4AF37] transition-colors leading-snug"
-                        style={{ fontFamily: "'Georgia', serif" }}
+                        className="text-sm font-semibold group-hover:text-[#D4AF37] transition-colors leading-snug"
+                        style={{ color: colors.text1, fontFamily: "'Georgia', serif" }}
                       >
                         {loc.name}
                       </h3>
@@ -199,9 +205,9 @@ export default function ArchiveSection() {
                     </div>
 
                     <div className="flex items-center gap-3 mt-1">
-                      <span className="text-[11px] text-[#D4AF37] opacity-60">📍 {loc.district}</span>
+                      <span className="text-[11px] opacity-60" style={{ color: colors.gold }}>📍 {loc.district}</span>
                       {loc.period && (
-                        <span className="text-[11px] text-[#EDE0C4] opacity-35">🕰 {loc.period}</span>
+                        <span className="text-[11px] opacity-35" style={{ color: colors.text2 }}>🕰 {loc.period}</span>
                       )}
                     </div>
 
@@ -210,10 +216,11 @@ export default function ArchiveSection() {
                         {loc.buriedPersons.slice(0, 3).map((person, pi) => (
                           <span
                             key={pi}
-                            className="text-[10px] px-1.5 py-0.5 text-[#EDE0C4] opacity-50"
+                            className="text-[10px] px-1.5 py-0.5 opacity-50"
                             style={{
-                              background: 'rgba(255,255,255,0.04)',
-                              border: '1px solid rgba(255,255,255,0.08)',
+                              background: `${colors.gold}08`,
+                              border: `1px solid ${colors.gold}12`,
+                              color: colors.text2,
                               borderRadius: '2px',
                             }}
                           >
@@ -221,8 +228,8 @@ export default function ArchiveSection() {
                           </span>
                         ))}
                         {loc.buriedPersons.length > 3 && (
-                          <span className="text-[10px] text-[#D4AF37] opacity-40">
-                            +{loc.buriedPersons.length - 3} kişi daha
+                          <span className="text-[10px] opacity-40" style={{ color: colors.gold }}>
+                            +{loc.buriedPersons.length - 3} {t('archive_more_people')}
                           </span>
                         )}
                       </div>

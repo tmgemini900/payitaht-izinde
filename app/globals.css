@@ -230,3 +230,107 @@ body {
   margin: 0 auto;
   padding: 0 1.5rem;
 }
+
+/* ═══════════════════════════════════════════════════════
+   AYDINLIK MOD — Light Mode
+═══════════════════════════════════════════════════════ */
+[data-theme="light"] {
+  --ottoman-dark:   #F4ECD8;
+  --ottoman-navy:   #EDE0C4;
+  --ottoman-ivory:  #1a0a00;
+  --ottoman-cream:  #4a3520;
+  --ottoman-gold:   #A07010;
+  --ottoman-gold-light: #C09020;
+}
+
+[data-theme="light"] body {
+  background-color: #F4ECD8;
+  color: #1a0a00;
+}
+
+[data-theme="light"] .ottoman-pattern {
+  background-color: #F4ECD8;
+  background-image:
+    radial-gradient(circle at 25% 25%, rgba(160,112,16,0.06) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(139,26,26,0.05) 0%, transparent 50%);
+}
+
+[data-theme="light"] .ottoman-card {
+  background: linear-gradient(135deg, rgba(255,252,242,0.98), rgba(248,244,230,0.99)) !important;
+  border-color: rgba(139,100,20,0.25) !important;
+}
+[data-theme="light"] .ottoman-card:hover {
+  border-color: rgba(139,100,20,0.55) !important;
+  box-shadow: 0 8px 32px rgba(160,112,16,0.12) !important;
+}
+
+[data-theme="light"] .text-gold-gradient {
+  background: linear-gradient(135deg, #8B5E00, #C09020, #8B5E00);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+[data-theme="light"] .calligraphy-title {
+  text-shadow: 0 0 30px rgba(160,112,16,0.3);
+}
+
+[data-theme="light"] .btn-ottoman {
+  background: linear-gradient(135deg, var(--ottoman-crimson), #A52020);
+  border-color: #8B5E00;
+  color: #F0D060;
+}
+
+[data-theme="light"] .btn-gold {
+  background: linear-gradient(135deg, #A07010, #7A5008);
+  border-color: #C09020;
+  color: #F4ECD8;
+}
+
+[data-theme="light"] .arabesque-border {
+  border-color: rgba(139,100,20,0.4);
+}
+[data-theme="light"] .arabesque-border::before {
+  border-color: rgba(139,100,20,0.2);
+}
+
+[data-theme="light"] .tugra-divider {
+  color: #A07010;
+}
+[data-theme="light"] .tugra-divider::before,
+[data-theme="light"] .tugra-divider::after {
+  background: linear-gradient(90deg, transparent, #A07010, transparent);
+}
+
+[data-theme="light"] ::-webkit-scrollbar-track {
+  background: #EDE0C4;
+}
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: #A07010;
+}
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: #C09020;
+}
+
+[data-theme="light"] .leaflet-container {
+  background: #E8D8B4 !important;
+}
+[data-theme="light"] .leaflet-popup-content-wrapper {
+  background: rgba(255,252,242,0.98) !important;
+  border-color: rgba(139,100,20,0.4) !important;
+  color: #1a0a00 !important;
+}
+[data-theme="light"] .leaflet-popup-tip {
+  background: rgba(139,100,20,0.4) !important;
+}
+[data-theme="light"] .leaflet-popup-close-button {
+  color: #A07010 !important;
+}
+
+[data-theme="light"] .badge-padisah  { background: rgba(160,112,16,0.15); border-color: #A07010; color: #6B4500; }
+[data-theme="light"] .badge-sahabe   { background: rgba(46,139,87,0.15);  border-color: #2E8B57; color: #1A5C38; }
+[data-theme="light"] .badge-evliya   { background: rgba(139,26,26,0.15);  border-color: #8B1A1A; color: #6B0000; }
+[data-theme="light"] .badge-alim     { background: rgba(52,152,219,0.15); border-color: #3498DB; color: #1A5A8B; }
+[data-theme="light"] .badge-devlet   { background: rgba(155,89,182,0.15); border-color: #9B59B6; color: #6B2A8B; }
+[data-theme="light"] .badge-kulturel { background: rgba(230,126,34,0.15); border-color: #E67E22; color: #8B4500; }
+

@@ -1,11 +1,13 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import dynamic from 'next/dynamic'
 import { Search, Filter, X, Wand2, Route } from 'lucide-react'
 import { locations, Location, LocationCategory, categoryConfig, thematicRoutes } from '@/data/locations'
 import { useProfile } from '@/context/ProfileContext'
+import { useTheme, tc } from '@/context/ThemeContext'
+import { useLanguage } from '@/context/LanguageContext'
 import LocationCard from './LocationCard'
 import AIPlanModal from './AIPlanModal'
 import RouteBuilderModal from './RouteBuilderModal'
@@ -16,16 +18,19 @@ const MapContainer = dynamic(
 )
 
 function MapSkeleton() {
+  const { isDark } = useTheme()
+  const { t } = useLanguage()
   return (
     <div className="w-full h-full flex items-center justify-center"
-      style={{ background: 'radial-gradient(ellipse at center, #1a1a2e, #0f0f1e)' }}>
+      style={{ background: isDark ? 'radial-gradient(ellipse at center, #1a1a2e, #0f0f1e)' : 'radial-gradient(ellipse at center, #EDE0C4, #F4ECD8)' }}>
       <div className="text-center">
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-          className="w-12 h-12 border-2 border-[#D4AF37] border-t-transparent rounded-full mx-auto mb-4"
+          className="w-12 h-12 border-2 border-t-transparent rounded-full mx-auto mb-4"
+          style={{ borderColor: '#D4AF37' }}
         />
-        <div className="text-[#D4AF37] text-sm tracking-widest">Harita Yükleniyor...</div>
+        <div className="text-sm tracking-widest" style={{ color: '#D4AF37' }}>{t('map_loading')}</div>
       </div>
     </div>
   )
@@ -33,12 +38,18 @@ function MapSkeleton() {
 
 const allCategories = Object.keys(categoryConfig) as LocationCategory[]
 
-interface NewBadge {
-  id: string; name: string; icon: string
+interface NewBadge { id: string; name: string; icon: string }
+
+interface InteractiveMapProps {
+  externalRouteId?: string | null
+  onExternalRouteChange?: (id: string | null) => void
 }
 
-export default function InteractiveMap() {
+export default function InteractiveMap({ externalRouteId, onExternalRouteChange }: InteractiveMapProps) {
   const { markVisited, isVisited, profile } = useProfile()
+  const { isDark } = useTheme()
+  const { t } = useLanguage()
+  const colors = tc(isDark)
 
   const [selectedLocation, setSelectedLocation]   = useState<Location | null>(null)
   const [activeCategories, setActiveCategories]   = useState<Set<LocationCategory>>(new Set(allCategories))
@@ -50,10 +61,18 @@ export default function InteractiveMap() {
   const [aiPlanIds,        setAiPlanIds]           = useState<number[] | null>(null)
   const [newBadge,         setNewBadge]            = useState<NewBadge | null>(null)
 
-  // Rozet kazanıldığında bildirim
-  const prevBadgeCount = useState(profile.badges.length)[0]
+  // Sync external route id from ThematicRoutes section
   useEffect(() => {
-    if (profile.badges.length > prevBadgeCount) {
+    if (externalRouteId !== undefined) {
+      setActiveRouteId(externalRouteId)
+      if (externalRouteId) setAiPlanIds(null)
+    }
+  }, [externalRouteId])
+
+  // Fix: use ref to track previous badge count
+  const prevBadgeCountRef = useRef(profile.badges.length)
+  useEffect(() => {
+    if (profile.badges.length > prevBadgeCountRef.current) {
       const latestId = profile.badges[profile.badges.length - 1]
       const badgeNames: Record<string, { name: string; icon: string }> = {
         'istanbul-fatihi': { name: 'İstanbul Fatihi', icon: '⚔️' },
@@ -70,7 +89,7 @@ export default function InteractiveMap() {
         setTimeout(() => setNewBadge(null), 4000)
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    prevBadgeCountRef.current = profile.badges.length
   }, [profile.badges.length])
 
   const toggleCategory = useCallback((cat: LocationCategory) => {
@@ -107,11 +126,25 @@ export default function InteractiveMap() {
   const handleApplyPlan = (ids: number[]) => {
     setAiPlanIds(ids)
     setActiveRouteId(null)
+    onExternalRouteChange?.(null)
+  }
+
+  const handleRouteToggle = (routeId: string) => {
+    const newId = activeRouteId === routeId ? null : routeId
+    setActiveRouteId(newId)
+    setAiPlanIds(null)
+    onExternalRouteChange?.(newId)
+  }
+
+  const handleClearAll = () => {
+    setAiPlanIds(null)
+    setActiveRouteId(null)
+    onExternalRouteChange?.(null)
   }
 
   return (
     <section id="map" className="relative py-0">
-      {/* Yeni rozet bildirimi */}
+      {/* Badge notification */}
       <AnimatePresence>
         {newBadge && (
           <motion.div
@@ -129,8 +162,8 @@ export default function InteractiveMap() {
           >
             <span className="text-2xl medal-animate">{newBadge.icon}</span>
             <div>
-              <div className="text-[#D4AF37] text-xs uppercase tracking-widest">Rozet Kazandın!</div>
-              <div className="text-[#F5F0E8] font-bold text-sm" style={{ fontFamily: "'Georgia', serif" }}>
+              <div className="text-[#D4AF37] text-xs uppercase tracking-widest">{t('badge_earned')}</div>
+              <div className="font-bold text-sm" style={{ color: colors.text1, fontFamily: "'Georgia', serif" }}>
                 {newBadge.name}
               </div>
             </div>
@@ -138,16 +171,16 @@ export default function InteractiveMap() {
         )}
       </AnimatePresence>
 
-      {/* Başlık */}
+      {/* Section header */}
       <div className="section-container py-12 text-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="inline-flex items-center gap-2 px-4 py-1.5 mb-4 border border-[rgba(212,175,55,0.3)] text-[#D4AF37] text-xs tracking-widest uppercase"
-          style={{ borderRadius: '2px' }}
+          className="inline-flex items-center gap-2 px-4 py-1.5 mb-4 border text-xs tracking-widest uppercase"
+          style={{ borderColor: `${colors.gold}50`, color: colors.gold, borderRadius: '2px' }}
         >
-          🗺️ İnteraktif Harita
+          {t('map_section_badge')}
         </motion.div>
         <motion.h2
           initial={{ opacity: 0, y: 20 }}
@@ -157,62 +190,62 @@ export default function InteractiveMap() {
           className="text-3xl md:text-5xl font-bold text-gold-gradient calligraphy-title mb-4"
           style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
         >
-          İstanbul&apos;un Manevi Haritası
+          {t('map_title')}
         </motion.h2>
         <motion.p
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ delay: 0.2 }}
-          className="text-[#EDE0C4] opacity-60 max-w-xl mx-auto text-sm"
+          className="opacity-60 max-w-xl mx-auto text-sm"
+          style={{ color: colors.text2 }}
         >
-          {filteredLocations.length} konum görüntüleniyor · Konuma tıkla → ziyaret edildi olarak işaretle
+          {filteredLocations.length} {t('map_desc')}
         </motion.p>
       </div>
 
-      {/* Kontrol paneli */}
+      {/* Controls */}
       <div className="section-container mb-4">
         <div className="flex flex-wrap gap-3 items-center justify-between">
-          {/* Arama */}
           <div className="relative flex-1 min-w-[180px] max-w-sm">
-            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#D4AF37] opacity-55" />
+            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-55" style={{ color: colors.gold }} />
             <input
               type="text"
-              placeholder="Türbe, şahsiyet veya semt ara..."
+              placeholder={t('map_search')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 text-sm text-[#EDE0C4] placeholder-[rgba(237,224,196,0.3)] outline-none"
+              className="w-full pl-9 pr-4 py-2.5 text-sm outline-none"
               style={{
-                background: 'rgba(26,26,46,0.8)',
-                border: '1px solid rgba(212,175,55,0.22)',
+                background: colors.inputBg,
+                border: `1px solid ${colors.border}`,
+                color: colors.text2,
                 borderRadius: '2px',
               }}
             />
             {searchQuery && (
               <button onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#D4AF37] opacity-50 hover:opacity-100">
+                className="absolute right-3 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-100"
+                style={{ color: colors.gold }}>
                 <X size={13} />
               </button>
             )}
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {/* AI Plan */}
             <button
               onClick={() => setShowAIModal(true)}
               className="flex items-center gap-1.5 px-3 py-2 text-xs transition-all"
               style={{
-                background: 'rgba(212,175,55,0.1)',
-                border: '1px solid rgba(212,175,55,0.3)',
-                color: '#D4AF37',
+                background: `${colors.gold}12`,
+                border: `1px solid ${colors.border}`,
+                color: colors.gold,
                 borderRadius: '2px',
               }}
             >
               <Wand2 size={13} />
-              AI Plan
+              {t('map_ai_plan')}
             </button>
 
-            {/* Rota Builder */}
             <button
               onClick={() => setShowRouteBuilder(true)}
               className="flex items-center gap-1.5 px-3 py-2 text-xs transition-all"
@@ -224,28 +257,26 @@ export default function InteractiveMap() {
               }}
             >
               <Route size={13} />
-              Rota
+              {t('map_route')}
             </button>
 
-            {/* Filtre */}
             <button
               onClick={() => setShowFilters(!showFilters)}
               className="flex items-center gap-1.5 px-3 py-2 text-xs transition-all"
               style={{
-                background: showFilters ? 'rgba(212,175,55,0.12)' : 'rgba(26,26,46,0.8)',
-                border: '1px solid rgba(212,175,55,0.22)',
-                color: '#D4AF37',
+                background: showFilters ? `${colors.gold}12` : colors.inputBg,
+                border: `1px solid ${colors.border}`,
+                color: colors.gold,
                 borderRadius: '2px',
               }}
             >
               <Filter size={13} />
-              Filtrele
+              {t('map_filter')}
             </button>
 
-            {/* Aktif plan/rota temizle */}
             {(aiPlanIds || activeRouteId) && (
               <button
-                onClick={() => { setAiPlanIds(null); setActiveRouteId(null) }}
+                onClick={handleClearAll}
                 className="flex items-center gap-1.5 px-3 py-2 text-xs"
                 style={{
                   background: 'rgba(139,26,26,0.2)',
@@ -255,13 +286,13 @@ export default function InteractiveMap() {
                 }}
               >
                 <X size={11} />
-                {aiPlanIds ? 'Planı Temizle' : 'Rotayı Temizle'}
+                {aiPlanIds ? t('map_clear_plan') : t('map_clear_route')}
               </button>
             )}
           </div>
         </div>
 
-        {/* Kategori filtreleri */}
+        {/* Category filters */}
         <AnimatePresence>
           {showFilters && (
             <motion.div
@@ -270,17 +301,17 @@ export default function InteractiveMap() {
               exit={{ height: 0, opacity: 0 }}
               className="overflow-hidden mt-3"
             >
-              <div className="flex flex-wrap gap-2 py-3 border-t border-[rgba(212,175,55,0.08)]">
+              <div className="flex flex-wrap gap-2 py-3 border-t" style={{ borderColor: `${colors.gold}10` }}>
                 <button
                   onClick={() => setActiveCategories(
                     activeCategories.size === allCategories.length
                       ? new Set()
                       : new Set(allCategories)
                   )}
-                  className="px-3 py-1.5 text-xs text-[#D4AF37] border border-[rgba(212,175,55,0.25)] hover:bg-[rgba(212,175,55,0.08)] transition-all"
-                  style={{ borderRadius: '2px' }}
+                  className="px-3 py-1.5 text-xs border hover:bg-[rgba(212,175,55,0.08)] transition-all"
+                  style={{ color: colors.gold, borderColor: `${colors.gold}25`, borderRadius: '2px' }}
                 >
-                  {activeCategories.size === allCategories.length ? 'Tümünü Gizle' : 'Tümünü Göster'}
+                  {activeCategories.size === allCategories.length ? t('map_hide_all') : t('map_show_all')}
                 </button>
                 {allCategories.map((cat) => {
                   const cfg = categoryConfig[cat]
@@ -292,18 +323,15 @@ export default function InteractiveMap() {
                       onClick={() => toggleCategory(cat)}
                       className="flex items-center gap-1.5 px-3 py-1.5 text-xs transition-all"
                       style={{
-                        background: isActive ? `${cfg.color}18` : 'rgba(26,26,46,0.5)',
-                        border: `1px solid ${isActive ? cfg.color + '44' : 'rgba(212,175,55,0.1)'}`,
-                        color: isActive ? cfg.color : 'rgba(237,224,196,0.35)',
+                        background: isActive ? `${cfg.color}18` : colors.inputBg,
+                        border: `1px solid ${isActive ? cfg.color + '44' : colors.border}`,
+                        color: isActive ? cfg.color : colors.muted,
                         borderRadius: '2px',
                       }}
                     >
                       <span>{cfg.icon}</span>
                       <span className="hidden sm:inline">{cfg.label}</span>
-                      <span
-                        className="px-1 py-0.5 text-[9px] rounded"
-                        style={{ background: `${cfg.color}25`, color: cfg.color }}
-                      >
+                      <span className="px-1 py-0.5 text-[9px] rounded" style={{ background: `${cfg.color}25`, color: cfg.color }}>
                         {count}
                       </span>
                     </button>
@@ -315,11 +343,11 @@ export default function InteractiveMap() {
         </AnimatePresence>
       </div>
 
-      {/* Harita */}
+      {/* Map */}
       <div className="relative mx-auto" style={{ height: '70vh', maxHeight: '700px' }}>
         <div
           className="relative w-full h-full overflow-hidden"
-          style={{ border: '1px solid rgba(212,175,55,0.18)' }}
+          style={{ border: `1px solid ${colors.border}` }}
         >
           <MapContainer
             locations={filteredLocations}
@@ -327,7 +355,6 @@ export default function InteractiveMap() {
             visitedIds={visitedIds}
             activeRouteId={activeRouteId}
             onLocationSelect={handleLocationSelect}
-            mapRef={{ current: null }}
           />
           <div className="absolute inset-0 pointer-events-none">
             <div className="relative w-full h-full pointer-events-auto">
@@ -340,56 +367,52 @@ export default function InteractiveMap() {
         </div>
       </div>
 
-      {/* Alt bilgi çubuğu */}
+      {/* Bottom bar */}
       <div className="section-container py-5">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          {/* Ziyaret sayacı */}
           <div className="flex items-center gap-3">
             <div
               className="px-4 py-2 text-sm"
               style={{
-                background: 'rgba(212,175,55,0.07)',
-                border: '1px solid rgba(212,175,55,0.18)',
+                background: `${colors.gold}08`,
+                border: `1px solid ${colors.border}`,
                 borderRadius: '2px',
               }}
             >
-              <span className="text-[#D4AF37] font-bold">{visitedIds.size}</span>
-              <span className="text-[#EDE0C4] opacity-50 ml-1">/{locations.length} mekan ziyaret edildi</span>
+              <span className="font-bold" style={{ color: colors.gold }}>{visitedIds.size}</span>
+              <span className="opacity-50 ml-1" style={{ color: colors.text2 }}>/{locations.length} {t('map_visited')}</span>
             </div>
             {visitedIds.size > 0 && (
-              <div className="text-[#D4AF37] text-xs opacity-50">
-                %{Math.round((visitedIds.size / locations.length) * 100)} tamamlandı
+              <div className="text-xs opacity-50" style={{ color: colors.gold }}>
+                %{Math.round((visitedIds.size / locations.length) * 100)} {t('map_completed')}
               </div>
             )}
             {profile.badges.length > 0 && (
               <div
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs"
                 style={{
-                  background: 'rgba(212,175,55,0.1)',
-                  border: '1px solid rgba(212,175,55,0.25)',
-                  color: '#D4AF37',
+                  background: `${colors.gold}10`,
+                  border: `1px solid ${colors.gold}25`,
+                  color: colors.gold,
                   borderRadius: '2px',
                 }}
               >
-                🏅 {profile.badges.length} rozet kazanıldı
+                🏅 {profile.badges.length} {t('map_badges')}
               </div>
             )}
           </div>
 
-          {/* Tematik rotalar */}
+          {/* Quick route buttons */}
           <div className="flex flex-wrap gap-1.5">
             {thematicRoutes.slice(0, 4).map((route) => (
               <button
                 key={route.id}
-                onClick={() => {
-                  setActiveRouteId(prev => prev === route.id ? null : route.id)
-                  setAiPlanIds(null)
-                }}
+                onClick={() => handleRouteToggle(route.id)}
                 className="flex items-center gap-1 px-2.5 py-1.5 text-xs transition-all"
                 style={{
-                  background: activeRouteId === route.id ? `${route.color}18` : 'rgba(26,26,46,0.5)',
-                  border: `1px solid ${activeRouteId === route.id ? route.color + '55' : 'rgba(212,175,55,0.1)'}`,
-                  color: activeRouteId === route.id ? route.color : 'rgba(237,224,196,0.4)',
+                  background: activeRouteId === route.id ? `${route.color}18` : colors.inputBg,
+                  border: `1px solid ${activeRouteId === route.id ? route.color + '55' : colors.border}`,
+                  color: activeRouteId === route.id ? route.color : colors.muted,
                   borderRadius: '2px',
                 }}
               >
@@ -401,7 +424,7 @@ export default function InteractiveMap() {
         </div>
       </div>
 
-      {/* Modallar */}
+      {/* Modals */}
       <AIPlanModal
         isOpen={showAIModal}
         onClose={() => setShowAIModal(false)}

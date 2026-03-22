@@ -2,29 +2,34 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Map, BookOpen, Route, Trophy, Menu, X, Compass, Wand2, User } from 'lucide-react'
+import { Map, BookOpen, Route, Trophy, Menu, X, Compass, Wand2, User, Sun, Moon } from 'lucide-react'
 import AIPlanModal from './AIPlanModal'
 import RouteBuilderModal from './RouteBuilderModal'
 import ProfilePanel from './ProfilePanel'
 import { useProfile } from '@/context/ProfileContext'
-
-const navItems = [
-  { label: 'Ana Sayfa',  href: '#hero',    icon: Compass },
-  { label: 'Harita',     href: '#map',     icon: Map },
-  { label: 'Rotalar',    href: '#routes',  icon: Route },
-  { label: 'Arşiv',      href: '#archive', icon: BookOpen },
-  { label: 'Başarılar',  href: '#badges',  icon: Trophy },
-]
+import { useTheme, tc } from '@/context/ThemeContext'
+import { useLanguage } from '@/context/LanguageContext'
 
 export default function Navigation() {
-  const [scrolled,      setScrolled]      = useState(false)
-  const [mobileOpen,    setMobileOpen]    = useState(false)
-  const [activeSection, setActiveSection] = useState('hero')
-  const [showAIModal,   setShowAIModal]   = useState(false)
+  const [scrolled,         setScrolled]         = useState(false)
+  const [mobileOpen,       setMobileOpen]       = useState(false)
+  const [activeSection,    setActiveSection]    = useState('hero')
+  const [showAIModal,      setShowAIModal]      = useState(false)
   const [showRouteBuilder, setShowRouteBuilder] = useState(false)
-  const [showProfile,   setShowProfile]   = useState(false)
+  const [showProfile,      setShowProfile]      = useState(false)
 
   const { visitedCount, profile } = useProfile()
+  const { isDark, toggleTheme } = useTheme()
+  const { lang, setLang, t } = useLanguage()
+  const colors = tc(isDark)
+
+  const navItems = [
+    { label: t('nav_home'),    href: '#hero',    icon: Compass },
+    { label: t('nav_map'),     href: '#map',     icon: Map },
+    { label: t('nav_routes'),  href: '#routes',  icon: Route },
+    { label: t('nav_archive'), href: '#archive', icon: BookOpen },
+    { label: t('nav_badges'),  href: '#badges',  icon: Trophy },
+  ]
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50)
@@ -46,10 +51,12 @@ export default function Navigation() {
         animate={{ y: 0 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          scrolled
-            ? 'backdrop-blur-xl bg-[rgba(15,15,30,0.96)] shadow-[0_4px_30px_rgba(212,175,55,0.12)]'
-            : 'bg-transparent'
+          scrolled ? 'shadow-[0_4px_30px_rgba(212,175,55,0.12)]' : ''
         }`}
+        style={{
+          backdropFilter: scrolled ? 'blur(20px)' : undefined,
+          background: scrolled ? colors.navBg : 'transparent',
+        }}
       >
         <div className="h-[2px] bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent opacity-60" />
 
@@ -62,21 +69,21 @@ export default function Navigation() {
               className="flex items-center gap-3 group"
             >
               <div className="relative w-9 h-9 flex items-center justify-center">
-                <div className="absolute inset-0 rounded-full border border-[#D4AF37] opacity-50 group-hover:opacity-100 transition-opacity" />
-                <div className="absolute inset-1 rounded-full border border-[#D4AF37] opacity-20" />
+                <div className="absolute inset-0 rounded-full border opacity-50 group-hover:opacity-100 transition-opacity" style={{ borderColor: colors.gold }} />
+                <div className="absolute inset-1 rounded-full border opacity-20" style={{ borderColor: colors.gold }} />
                 <span className="text-base">🕌</span>
               </div>
               <div className="text-left hidden sm:block">
-                <div className="text-[#D4AF37] font-bold text-xs tracking-[0.2em] uppercase calligraphy-title">
+                <div className="font-bold text-xs tracking-[0.2em] uppercase calligraphy-title" style={{ color: colors.gold }}>
                   Payitaht&apos;ın İzinde
                 </div>
-                <div className="text-[#EDE0C4] text-[10px] opacity-50 tracking-widest">
-                  İstanbul · Manevi Harita
+                <div className="text-[10px] opacity-50 tracking-widest" style={{ color: colors.text2 }}>
+                  {t('nav_subtitle')}
                 </div>
               </div>
             </motion.button>
 
-            {/* Masaüstü menü */}
+            {/* Desktop nav */}
             <div className="hidden md:flex items-center gap-0.5">
               {navItems.map((item) => {
                 const Icon = item.icon
@@ -86,11 +93,11 @@ export default function Navigation() {
                     key={item.href}
                     whileHover={{ y: -1 }}
                     onClick={() => scrollTo(item.href)}
-                    className={`flex items-center gap-1.5 px-3 py-2 text-xs tracking-wide transition-all duration-200 ${
-                      isActive
-                        ? 'text-[#D4AF37] border-b border-[#D4AF37]'
-                        : 'text-[#EDE0C4] hover:text-[#D4AF37]'
-                    }`}
+                    className="flex items-center gap-1.5 px-3 py-2 text-xs tracking-wide transition-all duration-200"
+                    style={{
+                      color: isActive ? colors.gold : colors.text2,
+                      borderBottom: isActive ? `1px solid ${colors.gold}` : '1px solid transparent',
+                    }}
                   >
                     <Icon size={13} />
                     {item.label}
@@ -99,8 +106,43 @@ export default function Navigation() {
               })}
             </div>
 
-            {/* Sağ araç çubuğu */}
+            {/* Right toolbar */}
             <div className="hidden md:flex items-center gap-2">
+              {/* Language toggle */}
+              <div className="flex items-center rounded overflow-hidden" style={{ border: `1px solid ${colors.border}` }}>
+                {(['tr', 'en'] as const).map((l) => (
+                  <button
+                    key={l}
+                    onClick={() => setLang(l)}
+                    className="px-2.5 py-1.5 text-xs font-medium transition-all"
+                    style={{
+                      background: lang === l ? colors.gold : 'transparent',
+                      color: lang === l ? (isDark ? '#0f0f1e' : '#F4ECD8') : colors.muted,
+                    }}
+                  >
+                    {l.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+
+              {/* Theme toggle */}
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={toggleTheme}
+                className="flex items-center gap-1.5 px-3 py-2 text-xs transition-all"
+                style={{
+                  background: `${colors.gold}15`,
+                  border: `1px solid ${colors.border}`,
+                  color: colors.gold,
+                  borderRadius: '2px',
+                }}
+                title={isDark ? t('nav_theme_light') : t('nav_theme_dark')}
+              >
+                {isDark ? <Sun size={13} /> : <Moon size={13} />}
+                <span className="hidden lg:inline">{isDark ? t('nav_theme_light') : t('nav_theme_dark')}</span>
+              </motion.button>
+
               {/* AI Plan */}
               <motion.button
                 whileHover={{ scale: 1.05 }}
@@ -108,18 +150,18 @@ export default function Navigation() {
                 onClick={() => setShowAIModal(true)}
                 className="flex items-center gap-1.5 px-3 py-2 text-xs"
                 style={{
-                  background: 'rgba(212,175,55,0.1)',
-                  border: '1px solid rgba(212,175,55,0.3)',
-                  color: '#D4AF37',
+                  background: `${colors.gold}12`,
+                  border: `1px solid ${colors.border}`,
+                  color: colors.gold,
                   borderRadius: '2px',
                 }}
-                title="AI Gezi Planı"
+                title={t('nav_plan')}
               >
                 <Wand2 size={13} />
-                Gezi Planı
+                {t('nav_plan')}
               </motion.button>
 
-              {/* Rota Oluştur */}
+              {/* Route */}
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -131,32 +173,32 @@ export default function Navigation() {
                   color: '#E05555',
                   borderRadius: '2px',
                 }}
-                title="Rota Oluştur"
+                title={t('nav_route_btn')}
               >
                 <Route size={13} />
-                Rota
+                {t('nav_route_btn')}
               </motion.button>
 
-              {/* Profil */}
+              {/* Profile */}
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setShowProfile(true)}
                 className="relative flex items-center gap-1.5 px-3 py-2 text-xs"
                 style={{
-                  background: 'rgba(26,26,46,0.8)',
-                  border: '1px solid rgba(212,175,55,0.2)',
-                  color: '#EDE0C4',
+                  background: colors.inputBg,
+                  border: `1px solid ${colors.border}`,
+                  color: colors.text2,
                   borderRadius: '2px',
                 }}
-                title="Profilim"
+                title={t('profile_title')}
               >
                 <User size={13} />
                 {profile.name}
                 {visitedCount > 0 && (
                   <span
                     className="ml-1 px-1 py-0.5 text-[9px] font-bold rounded-full"
-                    style={{ background: '#D4AF37', color: '#0f0f1e' }}
+                    style={{ background: colors.gold, color: isDark ? '#0f0f1e' : '#F4ECD8' }}
                   >
                     {visitedCount}
                   </span>
@@ -164,24 +206,34 @@ export default function Navigation() {
               </motion.button>
             </div>
 
-            {/* Mobil sağ butonlar */}
-            <div className="md:hidden flex items-center gap-2">
-              <button
-                onClick={() => setShowAIModal(true)}
-                className="text-[#D4AF37] p-2 opacity-70 hover:opacity-100"
-              >
+            {/* Mobile right buttons */}
+            <div className="md:hidden flex items-center gap-1">
+              {/* Language toggle mobile */}
+              <div className="flex items-center rounded overflow-hidden" style={{ border: `1px solid ${colors.border}` }}>
+                {(['tr', 'en'] as const).map((l) => (
+                  <button
+                    key={l}
+                    onClick={() => setLang(l)}
+                    className="px-2 py-1 text-[10px] font-medium transition-all"
+                    style={{
+                      background: lang === l ? colors.gold : 'transparent',
+                      color: lang === l ? (isDark ? '#0f0f1e' : '#F4ECD8') : colors.muted,
+                    }}
+                  >
+                    {l.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+              <button onClick={toggleTheme} className="p-2 opacity-70 hover:opacity-100" style={{ color: colors.gold }}>
+                {isDark ? <Sun size={18} /> : <Moon size={18} />}
+              </button>
+              <button onClick={() => setShowAIModal(true)} className="p-2 opacity-70 hover:opacity-100" style={{ color: colors.gold }}>
                 <Wand2 size={18} />
               </button>
-              <button
-                onClick={() => setShowProfile(true)}
-                className="text-[#EDE0C4] p-2 opacity-70 hover:opacity-100"
-              >
+              <button onClick={() => setShowProfile(true)} className="p-2 opacity-70 hover:opacity-100" style={{ color: colors.text2 }}>
                 <User size={18} />
               </button>
-              <button
-                onClick={() => setMobileOpen(!mobileOpen)}
-                className="text-[#D4AF37] p-2"
-              >
+              <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2" style={{ color: colors.gold }}>
                 {mobileOpen ? <X size={22} /> : <Menu size={22} />}
               </button>
             </div>
@@ -193,7 +245,7 @@ export default function Navigation() {
         )}
       </motion.nav>
 
-      {/* Mobil menü */}
+      {/* Mobile menu */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
@@ -201,7 +253,8 @@ export default function Navigation() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: '100%' }}
             transition={{ duration: 0.25 }}
-            className="fixed inset-0 z-40 bg-[rgba(8,8,20,0.98)] backdrop-blur-xl flex flex-col pt-20 px-6"
+            className="fixed inset-0 z-40 backdrop-blur-xl flex flex-col pt-20 px-6"
+            style={{ background: isDark ? 'rgba(8,8,20,0.98)' : 'rgba(244,236,216,0.98)' }}
           >
             {navItems.map((item, i) => {
               const Icon = item.icon
@@ -212,9 +265,13 @@ export default function Navigation() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.06 }}
                   onClick={() => scrollTo(item.href)}
-                  className="flex items-center gap-4 py-4 border-b border-[rgba(212,175,55,0.1)] text-[#EDE0C4] hover:text-[#D4AF37] transition-colors text-base"
+                  className="flex items-center gap-4 py-4 text-base transition-colors"
+                  style={{
+                    borderBottom: `1px solid ${colors.border}`,
+                    color: colors.text2,
+                  }}
                 >
-                  <Icon size={18} className="text-[#D4AF37]" />
+                  <Icon size={18} style={{ color: colors.gold }} />
                   {item.label}
                 </motion.button>
               )
@@ -227,17 +284,17 @@ export default function Navigation() {
               className="mt-6 btn-ottoman text-center text-sm flex items-center justify-center gap-2"
             >
               <Route size={14} />
-              Rota Oluştur
+              {t('nav_route_btn')}
             </motion.button>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Modallar */}
+      {/* Modals */}
       <AIPlanModal
         isOpen={showAIModal}
         onClose={() => setShowAIModal(false)}
-        onApplyPlan={(ids) => {
+        onApplyPlan={() => {
           document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' })
         }}
       />

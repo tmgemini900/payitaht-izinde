@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { ProfileProvider } from '@/context/ProfileContext'
+import { ThemeProvider } from '@/context/ThemeContext'
+import { LanguageProvider } from '@/context/LanguageContext'
 
 export const metadata: Metadata = {
   title: "Payitaht'ın İzinde – İstanbul'un Manevi Haritası",
@@ -44,9 +46,13 @@ export default function RootLayout({
         />
       </head>
       <body className="ottoman-pattern antialiased">
-        <ProfileProvider>
-          {children}
-        </ProfileProvider>
+        <ThemeProvider>
+          <LanguageProvider>
+            <ProfileProvider>
+              {children}
+            </ProfileProvider>
+          </LanguageProvider>
+        </ThemeProvider>
       </body>
     </html>
   )
