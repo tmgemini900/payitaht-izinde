@@ -48,7 +48,7 @@ interface InteractiveMapProps {
 }
 
 export default function InteractiveMap({ externalRouteId, onExternalRouteChange, triggerLocationId }: InteractiveMapProps) {
-  const { markVisited, isVisited, profile } = useProfile()
+  const { markVisited, unmarkVisited, profile } = useProfile()
   const { isDark } = useTheme()
   const { t, lang } = useLanguage()
   const colors = tc(isDark)
@@ -112,11 +112,18 @@ export default function InteractiveMap({ externalRouteId, onExternalRouteChange,
 
   const handleLocationSelect = useCallback((loc: Location) => {
     setSelectedLocation(loc)
-    markVisited(loc.id, locations)
-  }, [markVisited])
+  }, [])
 
   // Memoize the visited Set so Leaflet doesn't re-render markers on unrelated state changes
   const visitedIds = useMemo(() => new Set(profile.visitedIds), [profile.visitedIds])
+
+  const handleToggleVisited = useCallback((locId: number) => {
+    if (visitedIds.has(locId)) {
+      unmarkVisited(locId)
+    } else {
+      markVisited(locId, locations)
+    }
+  }, [markVisited, unmarkVisited, visitedIds])
 
   // Memoize filtered locations — expensive filter + includes over 100+ items
   const filteredLocations = useMemo(() => {
@@ -374,6 +381,8 @@ export default function InteractiveMap({ externalRouteId, onExternalRouteChange,
             <div className="relative w-full h-full pointer-events-auto">
               <LocationCard
                 location={selectedLocation}
+                isVisited={selectedLocation ? visitedIds.has(selectedLocation.id) : false}
+                onToggleVisited={handleToggleVisited}
                 onClose={() => setSelectedLocation(null)}
               />
             </div>

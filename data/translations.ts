@@ -183,6 +183,10 @@ const tr = {
   // Misc
   btn_close: 'Kapat',
   map_visited_label: 'Ziyaret Edildi',
+  // Visit button
+  loc_mark_visited: 'Burayı Ziyaret Ettim',
+  loc_mark_visited_done: 'Ziyaret Edildi',
+  loc_unmark_visited: 'İşareti Kaldır',
 }
 
 export type Translations = typeof tr
@@ -357,6 +361,10 @@ const en: Translations = {
   // Misc
   btn_close: 'Close',
   map_visited_label: 'Visited',
+  // Visit button
+  loc_mark_visited: 'I Visited This Place',
+  loc_mark_visited_done: 'Visited',
+  loc_unmark_visited: 'Remove Mark',
 }
 
 export const translations: Record<LangKey, Translations> = { tr, en }

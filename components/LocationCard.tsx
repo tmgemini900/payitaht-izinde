@@ -10,6 +10,8 @@ import type { Translations } from '@/data/translations'
 
 interface LocationCardProps {
   location: Location | null
+  isVisited: boolean
+  onToggleVisited: (id: number) => void
   onClose: () => void
 }
 
@@ -45,11 +47,12 @@ function Waveform({ isActive, color }: { isActive: boolean; color: string }) {
   )
 }
 
-export default function LocationCard({ location, onClose }: LocationCardProps) {
-  const [isSpeaking,  setIsSpeaking]  = useState(false)
-  const [speed,       setSpeed]       = useState(1.0)
-  const [voices,      setVoices]      = useState<SpeechSynthesisVoice[]>([])
-  const [shareCopied, setShareCopied] = useState(false)
+export default function LocationCard({ location, isVisited, onToggleVisited, onClose }: LocationCardProps) {
+  const [isSpeaking,    setIsSpeaking]    = useState(false)
+  const [speed,         setSpeed]         = useState(1.0)
+  const [voices,        setVoices]        = useState<SpeechSynthesisVoice[]>([])
+  const [shareCopied,   setShareCopied]   = useState(false)
+  const [justMarked,    setJustMarked]    = useState(false)
 
   // Keep utterance in ref to prevent GC mid-playback (Chrome bug)
   const utteranceRef    = useRef<SpeechSynthesisUtterance | null>(null)
@@ -476,6 +479,60 @@ export default function LocationCard({ location, onClose }: LocationCardProps) {
                 ℹ️ {location.visitInfo}
               </div>
             )}
+
+            {/* ── Visit Toggle Button ──────────────────────────────── */}
+            <motion.button
+              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.96 }}
+              onClick={() => {
+                if (!location) return
+                onToggleVisited(location.id)
+                if (!isVisited) {
+                  setJustMarked(true)
+                  setTimeout(() => setJustMarked(false), 2500)
+                }
+              }}
+              className="w-full py-3 text-xs tracking-widest uppercase font-semibold transition-all flex items-center justify-center gap-2"
+              style={isVisited ? {
+                background: 'rgba(46,139,87,0.15)',
+                border: '1px solid rgba(46,139,87,0.5)',
+                color: '#2E8B57',
+                borderRadius: '2px',
+              } : {
+                background: `linear-gradient(135deg, ${colors.gold}18, ${colors.gold}08)`,
+                border: `1px solid ${colors.gold}55`,
+                color: colors.gold,
+                borderRadius: '2px',
+              }}
+            >
+              <AnimatePresence mode="wait">
+                {isVisited ? (
+                  <motion.span
+                    key="visited"
+                    initial={{ scale: 0.7, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.7, opacity: 0 }}
+                    className="flex items-center gap-2"
+                  >
+                    <Check size={13} />
+                    {justMarked
+                      ? <span style={{ color: '#2E8B57' }}>✨ {t('loc_mark_visited_done')}!</span>
+                      : <span>{t('loc_mark_visited_done')} · <span className="opacity-60 normal-case text-[10px]">{t('loc_unmark_visited')}</span></span>
+                    }
+                  </motion.span>
+                ) : (
+                  <motion.span
+                    key="unvisited"
+                    initial={{ scale: 0.7, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.7, opacity: 0 }}
+                    className="flex items-center gap-2"
+                  >
+                    <span>🕌</span>
+                    {t('loc_mark_visited')}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </motion.button>
 
             {/* Directions */}
             <motion.button
